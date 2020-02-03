@@ -15,7 +15,7 @@ public:
 
 
 template <typename node_t>
-class iterator {
+class _iterator {
   node_t* current;
 public: 
   using value_type = typename node_t::value_type;
@@ -24,7 +24,7 @@ public:
   using iterator_category = std::forward_iterator_tag;
   using difference_type = std::ptrdiff_t;
 // overloading operators ++, *, ->...
-  iterator(node_t* new_node): current{new_node} {}        // custom constructor
+  _iterator(node_t* new_node): current{new_node} {}        // custom constructor
 
 };
 
@@ -36,8 +36,8 @@ public:
   using node_type = Node<std::pair<const kT, vT>>;
   bst() noexcept = default;      // default constructor
   //begin, end
-  // std::pair<iterator, bool>
-  void insert(const std::pair<const kT, vT> &);
+  using iterator = _iterator<node_type>;
+  std::pair<iterator, bool> insert(const std::pair<const kT, vT> &);
   void print_tree(node_type*);   // just for us to debug and check tree structure
 private:
   cmp op;
@@ -46,52 +46,59 @@ private:
 };
 ////////////////////////////////////////////////////////////////////////////////////
 template <typename kT, typename vT, typename cmp>
-//std::pair<typename bst<kT,vT,cmp>::iterator, bool>   
-void bst<kT,vT,cmp>::insert(const std::pair<const kT, vT> & new_pair) {
+std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const std::pair<const kT, vT> & new_pair) {
   // here node_type is known
   node_type* jumper {root.get()};
-  bool flag{0};
+  bool flag{0};     // just to signal when we have to exit from while loop
 
-  if(!jumper) {
+  if(!jumper) {     // if the tree is empty, create root node
     root = std::make_unique<node_type>(new_pair, nullptr);
     std::cout << "root created\n";
     std::cout << "start of tree \n";
     print_tree(root.get());
     std::cout << "\nend of tree \n";
-    return;
+    return std::pair<iterator, bool>{iterator{root.get()}, true};
    }
 
-  while(!flag) {
-  if( op( (jumper->value).first , (new_pair).first ) )
-  {
-    if(jumper->right)       // if right child is different from nullptr
-      jumper = (jumper->right).get();    // go right
-    else {
-      // insert new node here
-      jumper->right = std::make_unique<node_type>(new_pair, jumper);
-      flag=1;
+  while(true) {
+    std::cout << "entered forever loop";
+    if( op( (jumper->value).first , (new_pair).first ) )
+    {
+      if(jumper->right)       // if right child is different from nullptr
+        jumper = (jumper->right).get();    // go right
+      else {
+        // insert new node here
+        jumper->right = std::make_unique<node_type>(new_pair, jumper);
+        std::cout << "start of tree \n";
+        print_tree(root.get());
+        std::cout << "\nend of tree \n";
+        return std::pair<iterator, bool>{iterator{(jumper->right).get()}, true};
+      }
+    }
+    else if ( op( std::get<0>(new_pair) , std::get<0>(jumper->value) ) )
+    {
+      // go left
+      if(jumper->left)       // if right left is different from nullptr
+        jumper = (jumper->left).get();
+      else {
+        // insert new node here
+        jumper->left = std::make_unique<node_type>(new_pair, jumper);
+        std::cout << "start of tree \n";
+        print_tree(root.get());
+        std::cout << "\nend of tree \n";
+        return std::pair<iterator, bool>{iterator{(jumper->left).get()}, true};
+      }
+    }
+    else     // the keys are equal (the key is already present in the tree)
+    {
+      std::cout << "start of tree \n";
+      print_tree(root.get());
+      std::cout << "\nend of tree \n";
+      return std::pair<iterator, bool>{iterator{jumper}, false};
     }
   }
-  else if ( op( std::get<0>(new_pair) , std::get<0>(jumper->value) ) )
-  {
-    // go left
-    if(jumper->left)       // if right left is different from nullptr
-      jumper = (jumper->left).get();
-    else {
-      // insert new node here
-      jumper->left = std::make_unique<node_type>(new_pair, jumper);
-      flag=1; //std::pair<iterator, bool>{iterator{jumper}, true};
-    }
-  }
-  else     // the keys are equal (the key is already present in the tree)
-  {
-    flag=1; //std::pair<iterator, bool>{iterator{jumper}, false};
-  }
-  }
-  std::cout << "start of tree \n";
-  print_tree(root.get());
-  std::cout << "\nend of tree \n";
-  return;
+
+
 }
 
 template <typename kT, typename vT, typename cmp>
