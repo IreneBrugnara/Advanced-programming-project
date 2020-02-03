@@ -64,7 +64,6 @@ void bst<kT,vT,cmp>::insert(const std::pair<const kT, vT> & new_pair) {
   while(!flag) {
   if( op( (jumper->value).first , (new_pair).first ) )
   {
-    std::cout << "jumper < new key\n";
     if(jumper->right)       // if right child is different from nullptr
       jumper = (jumper->right).get();    // go right
     else {
@@ -106,10 +105,18 @@ void bst<kT,vT,cmp>::print_tree(node_type* jumper) {
   print_tree((jumper->left).get());
   std::cout << ", ";
   }
+  else
+  {
+    std::cout << " ( -,";
+  }
   // call function recursively on right child
   if(jumper->right) {
   print_tree((jumper->right).get());
   std::cout << " ) ";
+  }
+  else
+  {
+    std::cout << " -)";
   }
   return;
 };
@@ -117,13 +124,19 @@ void bst<kT,vT,cmp>::print_tree(node_type* jumper) {
 int main() {
 
   bst<int,char> mybst{};   // calls the implicit default constructor
-  auto p = std::pair<int,char>{4,'a'};    // calls the constructor of std::pair
+  auto p = std::pair<int,char>{5,'a'};    // calls the constructor of std::pair
   mybst.insert(p); 
-  p = std::pair<int,char>{8,'b'};
+  p = std::pair<int,char>{3,'b'};
   mybst.insert(p);
-  p = std::pair<int,char>{3,'c'};
+  p = std::pair<int,char>{7,'c'};
   mybst.insert(p);
-  p = std::pair<int,char>{2,'c'};
+  p = std::pair<int,char>{9,'c'};
+  mybst.insert(p);
+  p = std::pair<int,char>{6,'c'};
+  mybst.insert(p);
+  p = std::pair<int,char>{10,'c'};
+  mybst.insert(p);
+  p = std::pair<int,char>{4,'c'};
   mybst.insert(p);
 }
 
