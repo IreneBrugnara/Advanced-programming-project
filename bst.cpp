@@ -25,7 +25,13 @@ public:
   using difference_type = std::ptrdiff_t;
 // overloading operators ++, *, ->...
   _iterator(node_t* new_node): current{new_node} {}        // custom constructor
-
+  reference operator*() const noexcept { return current->value; }
+  pointer operator->() const noexcept { return &(*(*this)); }
+  reference operator++() noexcept;
+  friend bool operator==(const _iterator& a, const _iterator& b) {
+    return a.current == b.current;
+  }
+  // check why friend????
 };
 
 
@@ -39,6 +45,9 @@ public:
   using iterator = _iterator<node_type>;
   std::pair<iterator, bool> insert(const std::pair<const kT, vT> &);
   void print_tree(node_type*);   // just for us to debug and check tree structure
+  iterator begin();
+  iterator end() { return iterator{nullptr}; }
+
 private:
   cmp op;
   std::unique_ptr<node_type> root;
@@ -61,7 +70,6 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const 
    }
 
   while(true) {
-    std::cout << "entered forever loop";
     if( op( (jumper->value).first , (new_pair).first ) )
     {
       if(jumper->right)       // if right child is different from nullptr
@@ -128,12 +136,46 @@ void bst<kT,vT,cmp>::print_tree(node_type* jumper) {
   return;
 };
 
+////////////////////////////////////////////////////
+template <typename kT, typename vT, typename cmp>
+_iterator<Node<std::pair<const kT, vT>>> bst<kT,vT,cmp>::begin()
+{
+  node_type* jumper{root.get()};
+  while(jumper->left)
+    jumper = (jumper->left).get();
+  return iterator{jumper};
+}
+
+template <typename node_t>
+_iterator<node_t<std::pair<const kT, vT>>>& operator++() noexcept  // pre-increment
+{
+  if(current->right)      // if I have a right child
+  {
+    current = (current->right).get();     // go down right
+    while(current->left)      // while I have a left child
+      current = (current->left).get();     // go down left
+    return *this;
+  }
+  else
+  {
+    if(current->parent)
+      return nullptr;
+    while((current->parent)->right) == current)
+      current = current->parent;          // go up
+    current = current->parent;
+    return *this;
+  }
+
+}
+
+
 int main() {
 
   bst<int,char> mybst{};   // calls the implicit default constructor
   auto p = std::pair<int,char>{5,'a'};    // calls the constructor of std::pair
-  mybst.insert(p); 
-  p = std::pair<int,char>{3,'b'};
+  auto output = mybst.insert(p); 
+  p = std::pair<int,char>{4,'b'};
+  std::cout << "Value inserted? (0 false, 1 true)" << output.second;
   mybst.insert(p);
   p = std::pair<int,char>{7,'c'};
   mybst.insert(p);
@@ -141,9 +183,15 @@ int main() {
   mybst.insert(p);
   p = std::pair<int,char>{6,'c'};
   mybst.insert(p);
-  p = std::pair<int,char>{10,'c'};
+  p = std::pair<int,char>{1,'c'};
   mybst.insert(p);
-  p = std::pair<int,char>{4,'c'};
-  mybst.insert(p);
+  p = std::pair<int,char>{7,'c'};
+  output = mybst.insert(p);
+  std::cout << "Value inserted? (0 false, 1 true)" << output.second << "\n";
+
+  auto mybegin = mybst.begin();
+  std::cout << "first key: " << mybegin->first << "first value: " << mybegin->second << "\n";
+ // for(auto it=mybst.begin(); it!=mybst.end(); ++it)              // for-range loop
+ //   std::cout << it->first << "   ";
 }
 
