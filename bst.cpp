@@ -60,26 +60,30 @@ public:
   using iterator = _iterator<node_type, typename node_type::value_type>;
   using const_iterator = _iterator<node_type, const typename node_type::value_type>;
   std::pair<iterator, bool> insert(const std::pair<const kT, vT> &);
+  iterator find(const kT& x); 
   void print_tree(node_type*);   // just for us to debug and check tree structure
   iterator begin();
   iterator end() { return iterator{nullptr}; }
 
+  vT& operator[] (const kT& x);
+
   const_iterator begin() const;
   const_iterator end() const { return const_iterator{nullptr}; }
 
+  //std::pair<node_type*, where> locator(const kT& key);//move to private
  
 private:
   cmp op;
   std::unique_ptr<node_type> root;
 
-  std::pair<iterator, where> locator(const kT& key);
+  std::pair<node_type*, where> locator(const kT& key);
   // if the key is already present in a node, locator returns an iterator to this node and where=equal; if the key is not present and should go on the right child of a node, locator returns this node and where=right; similarly for left
 
 };
 
 // this is a support function used in insert(), find(), operator[]
 template <typename kT, typename vT, typename cmp>
-std::pair<typename bst<kT,vT,cmp>::iterator, where> bst<kT,vT,cmp>::locator(const kT& key) {
+std::pair<typename bst<kT,vT,cmp>::node_type*, where> bst<kT,vT,cmp>::locator(const kT& key) {
 
   // here node_type is known
   node_type* jumper {root.get()};
@@ -87,7 +91,7 @@ std::pair<typename bst<kT,vT,cmp>::iterator, where> bst<kT,vT,cmp>::locator(cons
 
   if(!jumper) {     // if the tree is empty, create root node
     //root = std::make_unique<node_type>(new_pair, nullptr);
-    return std::pair<iterator, where>{iterator{root.get()}, where::empty};
+    return std::pair<node_type*, where>{root.get(), where::empty};
    }
 
   while(true)
@@ -100,7 +104,7 @@ std::pair<typename bst<kT,vT,cmp>::iterator, where> bst<kT,vT,cmp>::locator(cons
         // insert new node here
         //jumper->right = std::make_unique<node_type>(new_pair, jumper);
       
-        return std::pair<iterator, where>{iterator{jumper}, where::right};
+        return std::pair<node_type*, where>{jumper, where::right};
       }
     }
     else if ( op( key , (jumper->value).first ) )
@@ -111,12 +115,12 @@ std::pair<typename bst<kT,vT,cmp>::iterator, where> bst<kT,vT,cmp>::locator(cons
       else {
         // insert new node here
         //jumper->left = std::make_unique<node_type>(new_pair, jumper);
-        return std::pair<iterator, where>{iterator{jumper}, where::left};
+        return std::pair<node_type*, where>{jumper, where::left};
       }
     }
     else     // the keys are equal (the key is already present in the tree)
     {
-      return std::pair<iterator, where>{iterator{jumper}, where::equal};
+      return std::pair<node_type*, where>{jumper, where::equal};
     }
   }
 
@@ -133,28 +137,47 @@ std::pair<typename bst<kT,vT,cmp>::iterator, where> bst<kT,vT,cmp>::locator(cons
 ////////////////////////////////////////////////////////////////////////////////////
 template <typename kT, typename vT, typename cmp>
 std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const std::pair<const kT, vT> & new_pair) {
+ 
   // here node_type is known
   auto info {locator(new_pair.first)};    // get information of what to do from function locator
-// info is std::pair of (iterator, where)
+// info is std::pair of (node*, where)
 
   switch (info.second) {
     case where::empty: {
       root = std::make_unique<node_type>(new_pair, nullptr);
-      return std::pair<iterator, bool>{info.first, true};
+      return std::pair<iterator, bool>{iterator{info.first}, true};
     }
     case where::equal: {
-      return std::pair<iterator, bool>{info.first, false};
+      return std::pair<iterator, bool>{iterator{info.first}, false};
     }
     case where::right: {
-      (info.first.current)->right = std::make_unique<node_type>(new_pair, info.first.current);
-      return std::pair<iterator, bool>{iterator{(jumper->right).get()}, true};
+      (info.first)->right = std::make_unique<node_type>(new_pair, (info.first));
+      return std::pair<iterator, bool>{iterator{(info.first)->right.get()}, true};
     }
-    
+   case where::left: {
+      (info.first)->left = std::make_unique<node_type>(new_pair, (info.first));
+      return std::pair<iterator, bool>{iterator{(info.first)->left.get()}, true};
+    }
 
-    default: 
-  }
+     //default:
+     
+  
+     }
 
 // TODO - capire se possiamo passare l'argomento by reference da locator a insert
+}
+
+template <typename kT, typename vT, typename cmp>
+typename bst<kT,vT,cmp>::iterator bst<kT,vT,cmp>::find(const kT& x){
+
+  auto info{locator(x)};
+
+  if(info.second == where::equal)
+    return iterator{info.first};
+  else{
+    return end();
+  }
+
 }
 
 template <typename kT, typename vT, typename cmp>
@@ -183,6 +206,17 @@ void bst<kT,vT,cmp>::print_tree(node_type* jumper) {
   }
   return;
 };
+
+template <typename kT, typename vT, typename cmp>
+vT& bst<kT,vT,cmp>::operator[] (const kT& x){
+
+  const std::pair<const kT, vT> input{x,vT{}};
+  auto info {insert(input)};
+
+  return (info.first)->second;
+  
+}
+
 
 ////////////////////////////////////////////////////
 template <typename kT, typename vT, typename cmp>
@@ -228,6 +262,10 @@ _iterator<node_t, O>& _iterator<node_t, O>::operator++() noexcept  // pre-increm
 int main() {
 
   bst<int,char> mybst{};   // calls the implicit default constructor
+  auto w = mybst.find(5);
+  if(w==nullptr)
+    std::cout << "nullptr find" << std::endl;
+  
   auto p = std::pair<int,char>{5,'a'};    // calls the constructor of std::pair
   auto output = mybst.insert(p); 
   p = std::pair<int,char>{4,'b'};
@@ -251,16 +289,29 @@ int main() {
 
   std::cout << "for-range loop: ";
   for(auto it{mybst.begin()}; it!=mybst.end(); it++)              // for-range loop
-    std::cout << it->first << "   "<<std::endl;
+    std::cout << it->first << "   ";
+
+  std::cout << std::endl;
 
   /*  Check for locator function
   auto result{mybst.locator(5)};
   std::cout << "Result " << static_cast<int>(result.second) << std::endl;
   */
  
+  auto r = mybst.find(1);
+  std::cout << r->first << std::endl;
+
+  r = mybst.find(47);
+
+  if(r==mybst.end())
+    std::cout << "Value not found" << std::endl;
 
 
+  auto value = mybst[56];
 
+  std::cout<< "Key: 1, Value: " << value << std::endl;
+
+  
   return 0;
 }
 
