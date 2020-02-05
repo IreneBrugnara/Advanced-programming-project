@@ -6,7 +6,8 @@
 enum class where {
   right,
   left,
-  equal
+  equal,
+  empty
 };
 
 template <typename T>
@@ -66,14 +67,67 @@ public:
   const_iterator begin() const;
   const_iterator end() const { return const_iterator{nullptr}; }
 
-
+ 
 private:
   cmp op;
   std::unique_ptr<node_type> root;
 
-  std::pair<iterator, const where> locator(const kT& key);
+  std::pair<iterator, where> locator(const kT& key);
 
 };
+
+template <typename kT, typename vT, typename cmp>
+std::pair<typename bst<kT,vT,cmp>::iterator,  where> bst<kT,vT,cmp>::locator(const kT& key) {
+
+  // here node_type is known
+  node_type* jumper {root.get()};
+  bool flag{0};     // just to signal when we have to exit from while loop
+
+  if(!jumper) {     // if the tree is empty, create root node
+    //root = std::make_unique<node_type>(new_pair, nullptr);
+    return std::pair<iterator, where>{iterator{root.get()}, where::empty};
+   }
+
+  while(true)
+  {
+    if( op( (jumper->value).first , key ) )
+    {
+      if(jumper->right)       // if right child is different from nullptr
+        jumper = (jumper->right).get();    // go right
+      else {
+        // insert new node here
+        //jumper->right = std::make_unique<node_type>(new_pair, jumper);
+      
+        return std::pair<iterator, where>{iterator{jumper}, where::right};
+      }
+    }
+    else if ( op( key , (jumper->value).first ) )
+    {
+      // go left
+      if(jumper->left)       // if right left is different from nullptr
+        jumper = (jumper->left).get();
+      else {
+        // insert new node here
+        //jumper->left = std::make_unique<node_type>(new_pair, jumper);
+        return std::pair<iterator, where>{iterator{jumper}, where::left};
+      }
+    }
+    else     // the keys are equal (the key is already present in the tree)
+    {
+      return std::pair<iterator, where>{iterator{jumper}, where::equal};
+    }
+  }
+
+
+}
+
+
+/* std::cout << "start of tree \n";
+        print_tree(root.get());
+        std::cout << "\nend of tree \n";
+*/
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 template <typename kT, typename vT, typename cmp>
 std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const std::pair<const kT, vT> & new_pair) {
@@ -220,27 +274,20 @@ int main() {
 
   auto mybegin = mybst.begin();
   std::cout << "first key: " << mybegin->first << "first value: " << mybegin->second << "\n";
-  auto it{mybst.begin()};
-
-  std::cout << it->first << "   ";
-  ++it;
-  std::cout << it->first << "   ";
-  ++it;
-  std::cout << it->first << "   ";
-  ++it;
-  std::cout << it->first << "   ";
-  ++it;
-  std::cout << it->first << "   ";
-  ++it;
-  std::cout << it->first << "   \n";
-  ++it;
-  bool comp = it!=mybst.end();
-  std::cout << "end? " << comp << "\n";
-
-
+  
 
   std::cout << "for-range loop: ";
   for(auto it{mybst.begin()}; it!=mybst.end(); it++)              // for-range loop
-    std::cout << it->first << "   ";
+    std::cout << it->first << "   "<<std::endl;
+
+  /*  Check for locator function
+  auto result{mybst.locator(5)};
+  std::cout << "Result " << static_cast<int>(result.second) << std::endl;
+  */
+ 
+
+
+
+  return 0;
 }
 
