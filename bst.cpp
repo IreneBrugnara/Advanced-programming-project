@@ -3,6 +3,12 @@
 #include <utility>
 #include <functional>
 
+enum class where {
+  right,
+  left,
+  equal
+};
+
 template <typename T>
 struct Node {
   T value;
@@ -14,11 +20,11 @@ public:
 };
 
 
-template <typename node_t>
+template <typename node_t, typename O>
 class _iterator {
   node_t* current;
 public: 
-  using value_type = typename node_t::value_type;
+  using value_type = O;// typename node_t::value_type;
   using reference = value_type&;
   using pointer = value_type*;
   using iterator_category = std::forward_iterator_tag;
@@ -27,11 +33,19 @@ public:
   _iterator(node_t* new_node): current{new_node} {}        // custom constructor
   reference operator*() const noexcept { return current->value; }
   pointer operator->() const noexcept { return &(*(*this)); }
-  reference operator++() noexcept;
   friend bool operator==(const _iterator& a, const _iterator& b) {
     return a.current == b.current;
   }
+  friend bool operator!=(const _iterator& a, const _iterator& b) {
+    return !(a == b);
+  }
   // check why friend????
+  _iterator& operator++() noexcept;           // pre-increment
+  _iterator operator++(int) noexcept {        // post-increment
+    _iterator tmp{current};
+    ++(*this);
+    return tmp;
+  }
 };
 
 
@@ -42,15 +56,22 @@ public:
   using node_type = Node<std::pair<const kT, vT>>;
   bst() noexcept = default;      // default constructor
   //begin, end
-  using iterator = _iterator<node_type>;
+  using iterator = _iterator<node_type, typename node_type::value_type>;
+  using const_iterator = _iterator<node_type, const typename node_type::value_type>;
   std::pair<iterator, bool> insert(const std::pair<const kT, vT> &);
   void print_tree(node_type*);   // just for us to debug and check tree structure
   iterator begin();
   iterator end() { return iterator{nullptr}; }
 
+  const_iterator begin() const;
+  const_iterator end() const { return const_iterator{nullptr}; }
+
+
 private:
   cmp op;
   std::unique_ptr<node_type> root;
+
+  std::pair<iterator, const where> locator(const kT& key);
 
 };
 ////////////////////////////////////////////////////////////////////////////////////
@@ -138,7 +159,7 @@ void bst<kT,vT,cmp>::print_tree(node_type* jumper) {
 
 ////////////////////////////////////////////////////
 template <typename kT, typename vT, typename cmp>
-_iterator<Node<std::pair<const kT, vT>>> bst<kT,vT,cmp>::begin()
+_iterator<Node<std::pair<const kT, vT>>, typename Node<std::pair<const kT, vT>>::value_type> bst<kT,vT,cmp>::begin()
 {
   node_type* jumper{root.get()};
   while(jumper->left)
@@ -146,24 +167,32 @@ _iterator<Node<std::pair<const kT, vT>>> bst<kT,vT,cmp>::begin()
   return iterator{jumper};
 }
 
-template <typename node_t>
-_iterator<node_t<std::pair<const kT, vT>>>& operator++() noexcept  // pre-increment
+template <typename kT, typename vT, typename cmp>
+_iterator<Node<std::pair<const kT, vT>>, const typename Node<std::pair<const kT, vT>>::value_type> bst<kT,vT,cmp>::begin() const
+{
+  node_type* jumper{root.get()};
+  while(jumper->left)
+    jumper = (jumper->left).get();
+  return iterator{jumper};
+}
+
+
+template <typename node_t, typename O>
+_iterator<node_t, O>& _iterator<node_t, O>::operator++() noexcept  // pre-increment
 {
   if(current->right)      // if I have a right child
   {
     current = (current->right).get();     // go down right
     while(current->left)      // while I have a left child
       current = (current->left).get();     // go down left
-    return *this;
   }
   else
   {
-    if(current->parent)
-      return nullptr;
-    while((current->parent)->right) == current)
+    while((current->parent) && ((current->parent)->right).get() == current)
       current = current->parent;          // go up
-    current = current->parent;
+    current = current->parent;    // one more jump
     return *this;
+
   }
 
 }
@@ -191,7 +220,27 @@ int main() {
 
   auto mybegin = mybst.begin();
   std::cout << "first key: " << mybegin->first << "first value: " << mybegin->second << "\n";
- // for(auto it=mybst.begin(); it!=mybst.end(); ++it)              // for-range loop
- //   std::cout << it->first << "   ";
+  auto it{mybst.begin()};
+
+  std::cout << it->first << "   ";
+  ++it;
+  std::cout << it->first << "   ";
+  ++it;
+  std::cout << it->first << "   ";
+  ++it;
+  std::cout << it->first << "   ";
+  ++it;
+  std::cout << it->first << "   ";
+  ++it;
+  std::cout << it->first << "   \n";
+  ++it;
+  bool comp = it!=mybst.end();
+  std::cout << "end? " << comp << "\n";
+
+
+
+  std::cout << "for-range loop: ";
+  for(auto it{mybst.begin()}; it!=mybst.end(); it++)              // for-range loop
+    std::cout << it->first << "   ";
 }
 
