@@ -73,11 +73,13 @@ private:
   std::unique_ptr<node_type> root;
 
   std::pair<iterator, where> locator(const kT& key);
+  // if the key is already present in a node, locator returns an iterator to this node and where=equal; if the key is not present and should go on the right child of a node, locator returns this node and where=right; similarly for left
 
 };
 
+// this is a support function used in insert(), find(), operator[]
 template <typename kT, typename vT, typename cmp>
-std::pair<typename bst<kT,vT,cmp>::iterator,  where> bst<kT,vT,cmp>::locator(const kT& key) {
+std::pair<typename bst<kT,vT,cmp>::iterator, where> bst<kT,vT,cmp>::locator(const kT& key) {
 
   // here node_type is known
   node_type* jumper {root.get()};
@@ -132,56 +134,27 @@ std::pair<typename bst<kT,vT,cmp>::iterator,  where> bst<kT,vT,cmp>::locator(con
 template <typename kT, typename vT, typename cmp>
 std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const std::pair<const kT, vT> & new_pair) {
   // here node_type is known
-  node_type* jumper {root.get()};
-  bool flag{0};     // just to signal when we have to exit from while loop
+  auto info {locator(new_pair.first)};    // get information of what to do from function locator
+// info is std::pair of (iterator, where)
 
-  if(!jumper) {     // if the tree is empty, create root node
-    root = std::make_unique<node_type>(new_pair, nullptr);
-    std::cout << "root created\n";
-    std::cout << "start of tree \n";
-    print_tree(root.get());
-    std::cout << "\nend of tree \n";
-    return std::pair<iterator, bool>{iterator{root.get()}, true};
-   }
+  switch (info.second) {
+    case where::empty: {
+      root = std::make_unique<node_type>(new_pair, nullptr);
+      return std::pair<iterator, bool>{info.first, true};
+    }
+    case where::equal: {
+      return std::pair<iterator, bool>{info.first, false};
+    }
+    case where::right: {
+      (info.first.current)->right = std::make_unique<node_type>(new_pair, info.first.current);
+      return std::pair<iterator, bool>{iterator{(jumper->right).get()}, true};
+    }
+    
 
-  while(true) {
-    if( op( (jumper->value).first , (new_pair).first ) )
-    {
-      if(jumper->right)       // if right child is different from nullptr
-        jumper = (jumper->right).get();    // go right
-      else {
-        // insert new node here
-        jumper->right = std::make_unique<node_type>(new_pair, jumper);
-        std::cout << "start of tree \n";
-        print_tree(root.get());
-        std::cout << "\nend of tree \n";
-        return std::pair<iterator, bool>{iterator{(jumper->right).get()}, true};
-      }
-    }
-    else if ( op( std::get<0>(new_pair) , std::get<0>(jumper->value) ) )
-    {
-      // go left
-      if(jumper->left)       // if right left is different from nullptr
-        jumper = (jumper->left).get();
-      else {
-        // insert new node here
-        jumper->left = std::make_unique<node_type>(new_pair, jumper);
-        std::cout << "start of tree \n";
-        print_tree(root.get());
-        std::cout << "\nend of tree \n";
-        return std::pair<iterator, bool>{iterator{(jumper->left).get()}, true};
-      }
-    }
-    else     // the keys are equal (the key is already present in the tree)
-    {
-      std::cout << "start of tree \n";
-      print_tree(root.get());
-      std::cout << "\nend of tree \n";
-      return std::pair<iterator, bool>{iterator{jumper}, false};
-    }
+    default: 
   }
 
-
+// TODO - capire se possiamo passare l'argomento by reference da locator a insert
 }
 
 template <typename kT, typename vT, typename cmp>
