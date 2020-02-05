@@ -60,6 +60,7 @@ public:
   using iterator = _iterator<node_type, typename node_type::value_type>;
   using const_iterator = _iterator<node_type, const typename node_type::value_type>;
   std::pair<iterator, bool> insert(const std::pair<const kT, vT> &);
+ // std::pair<iterator, bool> insert(std::pair<const kT, vT> &&);
   iterator find(const kT& x); 
   void print_tree(node_type*);   // just for us to debug and check tree structure
   iterator begin();
@@ -137,7 +138,7 @@ std::pair<typename bst<kT,vT,cmp>::node_type*, where> bst<kT,vT,cmp>::locator(co
 ////////////////////////////////////////////////////////////////////////////////////
 template <typename kT, typename vT, typename cmp>
 std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const std::pair<const kT, vT> & new_pair) {
- 
+  std::cout << "l-value insert called\n";
   // here node_type is known
   auto info {locator(new_pair.first)};    // get information of what to do from function locator
 // info is std::pair of (node*, where)
@@ -166,6 +167,14 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const 
 
 // TODO - capire se possiamo passare l'argomento by reference da locator a insert
 }
+/*
+template <typename kT, typename vT, typename cmp>
+std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(std::pair<const kT, vT> && new_pair) {
+  std::cout << "r-value insert called\n";
+  return insert((new_pair));
+  
+}
+*/
 
 template <typename kT, typename vT, typename cmp>
 typename bst<kT,vT,cmp>::iterator bst<kT,vT,cmp>::find(const kT& x){
@@ -258,14 +267,41 @@ _iterator<node_t, O>& _iterator<node_t, O>::operator++() noexcept  // pre-increm
 
 }
 
+class resource {
+private:
+  int x;
+public:
+
+  resource(): x{5} {std::cout << "Resource default constructed\n";}
+
+  resource(const resource &res): x{res.x} {std::cout << "Resource copy constructed\n";}
+
+  resource& operator=(resource &res) {
+    x = res.x;
+    std::cout << "Resource copy assigned\n";
+    return *this;
+  }
+
+
+  void prova(std::pair<int,resource>&& pair) {
+    std::cout << "r-value called\n";
+  }
+
+  void prova(const std::pair<int,resource>& pair) {
+    std::cout << "l-value called\n";
+  }
+
+};
+
 
 int main() {
-
+/*
   bst<int,char> mybst{};   // calls the implicit default constructor
   auto w = mybst.find(5);
+
   if(w==nullptr)
     std::cout << "nullptr find" << std::endl;
-  
+
   auto p = std::pair<int,char>{5,'a'};    // calls the constructor of std::pair
   auto output = mybst.insert(p); 
   p = std::pair<int,char>{4,'b'};
@@ -293,10 +329,10 @@ int main() {
 
   std::cout << std::endl;
 
-  /*  Check for locator function
+    Check for locator function
   auto result{mybst.locator(5)};
   std::cout << "Result " << static_cast<int>(result.second) << std::endl;
-  */
+  
  
   auto r = mybst.find(1);
   std::cout << r->first << std::endl;
@@ -311,7 +347,24 @@ int main() {
 
   std::cout<< "Key: 1, Value: " << value << std::endl;
 
-  
+
+
+  bst<int,resource> prova{};
+  resource myres{};
+  std::cout << "Inserted l-value\n";
+
+  std::pair<int,resource> mypair {1, myres};
+
+  prova.insert(mypair);
+  std::cout << "\n\nInserted r-value\n";
+  prova.insert(std::pair<int,resource>{2, resource{}} );
+  */
+  resource myres{};
+  std::pair<int,resource> res2{2,myres};
+  std::cout << "should be l-value";
+  myres.prova(res2);
+  std::cout << "should be r-value";
+  myres.prova(std::pair<int,resource>{});
   return 0;
 }
 
