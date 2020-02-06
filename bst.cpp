@@ -65,7 +65,7 @@ public:
   using iterator = _iterator<node_type, typename node_type::value_type>;
   using const_iterator = _iterator<node_type, const typename node_type::value_type>;
   std::pair<iterator, bool> insert(const std::pair<const kT, vT> &);
-  std::pair<iterator, bool> insert(std::pair<const kT, vT> &&);
+ // std::pair<iterator, bool> insert(std::pair<const kT, vT> &&);
   iterator find(const kT& x); 
   void print_tree(node_type*);   // just for us to debug and check tree structure
   iterator begin();
@@ -169,7 +169,7 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const 
      //default:
   }
 }
-
+/*
 template <typename kT, typename vT, typename cmp>
 std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(std::pair<const kT, vT> && new_pair) {
   std::cout << "r-value insert called\n";
@@ -198,7 +198,7 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(std::p
   }
   
 }
-
+*/
 
 template <typename kT, typename vT, typename cmp>
 typename bst<kT,vT,cmp>::iterator bst<kT,vT,cmp>::find(const kT& x){
@@ -243,9 +243,12 @@ void bst<kT,vT,cmp>::print_tree(node_type* jumper) {
 template <typename kT, typename vT, typename cmp>
 vT& bst<kT,vT,cmp>::operator[] (const kT& x){
   std::cout << "l-value subscript\n";
-  const std::pair<const kT, vT> input{x,vT{}};
-  auto info {insert(input)};
+  //const std::pair<const kT, vT> input{x,vT{}};
+  auto info {insert(std::pair<const kT, vT> {x,vT{}})};
   return (info.first)->second;
+
+
+  //TODO try to use not insert function but locator (why? here we initialize a std::pair)
   
 }
 
@@ -255,8 +258,6 @@ vT& bst<kT,vT,cmp>::operator[] (kT&& x){
   auto info {insert(std::pair< kT, vT>{std::move(x),vT{}})};
 
   
-
-
   return (info.first)->second;
   
 }
@@ -345,7 +346,8 @@ bool operator<(const resource &res1, const resource &res2) {
 
 
 int main() {
-/*
+/**************
+  (05/02) CHECK FOR BST IMPLEMENTATION 
   bst<int,char> mybst{};   // calls the implicit default constructor
   auto w = mybst.find(5);
 
@@ -398,19 +400,31 @@ int main() {
   std::cout<< "Key: 1, Value: " << value << std::endl;
 
 
-*/
-  bst<resource,int> prova{};
-  resource myres{};
-  std::cout << "Inserted l-value\n";
+******************************************************/
+
+// (06/02) CHECK MOVE-COPY SEMANTICS
+
+  bst<int,char> prova{};
+  resource myres{};  // should be called default ctor
   myres.printX();
-  std::pair< resource,int> mypair {myres, 1};
-  prova.insert(mypair);
-  std::cout << "\n\nInserted r-value\n";
-  prova.insert(std::pair< resource,int>{resource{}, 2} );
-  std::cout << "\n SUBSCRIPT OPERATOR";
-  std::cout << "prova[myres]=" << prova[myres] << "\n";
-  std::cout << "prova[myres]=" << prova[ std::move(myres)] << "\n";
+  std::pair<int,char> mypair {1, 'c'}; //should be called a copy ctor
+  std::cout << mypair.first << "\n";
+  std::cout << "Now I insert an l value \n";
+  std::cout << &mypair;
+  prova.insert(mypair); //should be called a copy ctor
+  std::cout << " -------------------------- \n";
 /*
+  std::cout << "\n Now I Insert r-value\n";
+  prova.insert(std::pair<int,resource>{2, resource{}} );
+  //should be called a default ctor (resource{}) and move ctor inside insert to init std::pair
+  std::cout << " -------------------------- \n";
+  std::cout << "\n SUBSCRIPT OPERATOR";
+  int prova_int = 2;
+  std::cout << "L-value version : prova[myres]=" << prova[prova_int] << "\n";
+  //should be called a copy ctor of std::pair
+  std::cout << "R-value version : prova[myres]=" << prova[2] << "\n";
+  //should be called a move ctor of std::pair
+
   resource myres{};
   myres.printX();
   std::cout << "------------------";
@@ -422,9 +436,10 @@ int main() {
   //std::cout << "------------------";
   //std::pair<const resource, int> res = std::make_pair(std::move(ress), 3);
  // std::cout << "prova[myres]=" << find << "\n";
-  /*
-  resource myres{};
-  std::pair<int,resource> res2{2,myres};
+/*  
+  std::cout << 
+  resource myres2{};
+  std::pair<int,resource> res2{2,myres2};
   std::cout << "should be l-value";
   myres.prova(res2);
   std::cout << "should be r-value";
@@ -436,7 +451,8 @@ int main() {
   std::cout << "should be l-value\n";
   std::pair<const int, char> myp {1,'c'};
   bbst.insert(myp);
-*/
+*/  
+
   return 0;
 }
 
