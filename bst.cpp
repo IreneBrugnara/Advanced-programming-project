@@ -17,7 +17,12 @@ struct Node {
   Node* parent;
 public:
   using value_type=T;
-  Node(const T& val, Node* p): value{val}, parent{p} {}	// custom constructor - note that value{val} calls the copy constructor of T
+  Node(const T& val, Node* p): value{val}, parent{p} {
+    std::cout << "Node copy constructed\n";
+  }	// custom constructor - note that value{val} calls the copy constructor of T
+  Node(T&& val, Node* p): value{std::move(val)}, parent{p} {
+    std::cout << "Node move constructed\n";
+  }  // calls move constructor of type T
 };
 
 
@@ -60,13 +65,14 @@ public:
   using iterator = _iterator<node_type, typename node_type::value_type>;
   using const_iterator = _iterator<node_type, const typename node_type::value_type>;
   std::pair<iterator, bool> insert(const std::pair<const kT, vT> &);
- // std::pair<iterator, bool> insert(std::pair<const kT, vT> &&);
+  std::pair<iterator, bool> insert(std::pair<const kT, vT> &&);
   iterator find(const kT& x); 
   void print_tree(node_type*);   // just for us to debug and check tree structure
   iterator begin();
   iterator end() { return iterator{nullptr}; }
 
   vT& operator[] (const kT& x);
+  vT& operator[] (kT&& x);
 
   const_iterator begin() const;
   const_iterator end() const { return const_iterator{nullptr}; }
@@ -161,20 +167,38 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const 
     }
 
      //default:
-     
-  
-     }
-
-// TODO - capire se possiamo passare l'argomento by reference da locator a insert
+  }
 }
-/*
+
 template <typename kT, typename vT, typename cmp>
 std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(std::pair<const kT, vT> && new_pair) {
   std::cout << "r-value insert called\n";
-  return insert((new_pair));
+  // here node_type is known
+  auto info {locator(new_pair.first)};    // get information of what to do from function locator
+// info is std::pair of (node*, where)
+
+  switch (info.second) {
+    case where::empty: {
+      root = std::make_unique<node_type>(std::move(new_pair), nullptr);
+      return std::pair<iterator, bool>{iterator{info.first}, true};
+    }
+    case where::equal: {
+      return std::pair<iterator, bool>{iterator{info.first}, false};
+    }
+    case where::right: {
+      (info.first)->right = std::make_unique<node_type>(std::move(new_pair), (info.first));
+      return std::pair<iterator, bool>{iterator{(info.first)->right.get()}, true};
+    }
+   case where::left: {
+      (info.first)->left = std::make_unique<node_type>(std::move(new_pair), (info.first));
+      return std::pair<iterator, bool>{iterator{(info.first)->left.get()}, true};
+    }
+
+     //default:
+  }
   
 }
-*/
+
 
 template <typename kT, typename vT, typename cmp>
 typename bst<kT,vT,cmp>::iterator bst<kT,vT,cmp>::find(const kT& x){
@@ -218,9 +242,20 @@ void bst<kT,vT,cmp>::print_tree(node_type* jumper) {
 
 template <typename kT, typename vT, typename cmp>
 vT& bst<kT,vT,cmp>::operator[] (const kT& x){
-
+  std::cout << "l-value subscript\n";
   const std::pair<const kT, vT> input{x,vT{}};
   auto info {insert(input)};
+  return (info.first)->second;
+  
+}
+
+template <typename kT, typename vT, typename cmp>
+vT& bst<kT,vT,cmp>::operator[] (kT&& x){
+  std::cout << "r-value subscript\n";
+  auto info {insert(std::pair< kT, vT>{std::move(x),vT{}})};
+
+  
+
 
   return (info.first)->second;
   
@@ -276,9 +311,17 @@ public:
 
   resource(const resource &res): x{res.x} {std::cout << "Resource copy constructed\n";}
 
-  resource& operator=(resource &res) {
+  resource& operator=(const resource &res) {
     x = res.x;
     std::cout << "Resource copy assigned\n";
+    return *this;
+  }
+
+  resource(resource &&res): x{std::move(res.x)} {std::cout << "Resource move constructed\n";}
+
+  resource& operator=(resource &&res) {
+    x = std::move(res.x);
+    std::cout << "Resource move assigned\n";
     return *this;
   }
 
@@ -290,8 +333,15 @@ public:
   void prova(const std::pair<int,resource>& pair) {
     std::cout << "l-value called\n";
   }
+  
+  void printX() const {std::cout << "x= " << x << "\n";}
 
+  friend bool operator<(const resource &res1, const resource &res2);
 };
+
+bool operator<(const resource &res1, const resource &res2) {
+    return res1.x < res2.x;
+  }
 
 
 int main() {
@@ -348,23 +398,45 @@ int main() {
   std::cout<< "Key: 1, Value: " << value << std::endl;
 
 
-
-  bst<int,resource> prova{};
+*/
+  bst<resource,int> prova{};
   resource myres{};
   std::cout << "Inserted l-value\n";
-
-  std::pair<int,resource> mypair {1, myres};
-
+  myres.printX();
+  std::pair< resource,int> mypair {myres, 1};
   prova.insert(mypair);
   std::cout << "\n\nInserted r-value\n";
-  prova.insert(std::pair<int,resource>{2, resource{}} );
-  */
+  prova.insert(std::pair< resource,int>{resource{}, 2} );
+  std::cout << "\n SUBSCRIPT OPERATOR";
+  std::cout << "prova[myres]=" << prova[myres] << "\n";
+  std::cout << "prova[myres]=" << prova[ std::move(myres)] << "\n";
+/*
+  resource myres{};
+  myres.printX();
+  std::cout << "------------------";
+  auto ress = resource(std::move(myres));
+  ress.printX();
+*/
+ // resource&& ref = resource{};
+ // auto resss = std::move(ref);
+  //std::cout << "------------------";
+  //std::pair<const resource, int> res = std::make_pair(std::move(ress), 3);
+ // std::cout << "prova[myres]=" << find << "\n";
+  /*
   resource myres{};
   std::pair<int,resource> res2{2,myres};
   std::cout << "should be l-value";
   myres.prova(res2);
   std::cout << "should be r-value";
   myres.prova(std::pair<int,resource>{});
+  
+  bst<const int, char> bbst{};
+  std::cout << "should be r-value\n";
+  bbst.insert(std::pair<const int, char>{1,'c'});
+  std::cout << "should be l-value\n";
+  std::pair<const int, char> myp {1,'c'};
+  bbst.insert(myp);
+*/
   return 0;
 }
 
