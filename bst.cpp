@@ -3,6 +3,57 @@
 #include <utility>
 #include <functional>
 
+class resource {
+private:
+  int x;
+public:
+
+  resource(): x{5} {std::cout << "Resource default constructed\n";}
+
+  resource(const resource &res): x{res.x} {std::cout << "Resource copy constructed\n";}
+
+  resource& operator=(const resource &res) {
+    x = res.x;
+    std::cout << "Resource copy assigned\n";
+    return *this;
+  }
+
+  resource(resource &&res): x{std::move(res.x)} {std::cout << "Resource move constructed\n";}
+
+  resource& operator=(resource &&res) {
+    x = std::move(res.x);
+    std::cout << "Resource move assigned\n";
+    return *this;
+  }
+
+  resource(const resource &&res): x{std::move(res.x)} {std::cout << "Const Resource move constructed\n";}
+
+  resource& operator=(const resource &&res) {
+    x = std::move(res.x);
+    std::cout << "Const Resource move assigned\n";
+    return *this;
+  }
+
+  void prova(std::pair<int,resource>&& pair) {
+    std::cout << "r-value called\n";
+  }
+
+  void prova(const std::pair<int,resource>& pair) {
+    std::cout << "l-value called\n";
+  }
+  
+  void printX() const {std::cout << "x= " << x << "\n";}
+
+  
+
+  friend bool operator<(const resource &res1, const resource &res2);
+};
+
+bool operator<(const resource &res1, const resource &res2) {
+    return res1.x < res2.x;
+  }
+
+
 enum class where {
   right,
   left,
@@ -65,7 +116,7 @@ public:
   using iterator = _iterator<node_type, typename node_type::value_type>;
   using const_iterator = _iterator<node_type, const typename node_type::value_type>;
   std::pair<iterator, bool> insert(const std::pair<const kT, vT> &);
- // std::pair<iterator, bool> insert(std::pair<const kT, vT> &&);
+  std::pair<iterator, bool> insert(std::pair<const kT, vT> &&);
   iterator find(const kT& x); 
   void print_tree(node_type*);   // just for us to debug and check tree structure
   iterator begin();
@@ -169,7 +220,7 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const 
      //default:
   }
 }
-/*
+
 template <typename kT, typename vT, typename cmp>
 std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(std::pair<const kT, vT> && new_pair) {
   std::cout << "r-value insert called\n";
@@ -198,7 +249,7 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(std::p
   }
   
 }
-*/
+
 
 template <typename kT, typename vT, typename cmp>
 typename bst<kT,vT,cmp>::iterator bst<kT,vT,cmp>::find(const kT& x){
@@ -243,8 +294,8 @@ void bst<kT,vT,cmp>::print_tree(node_type* jumper) {
 template <typename kT, typename vT, typename cmp>
 vT& bst<kT,vT,cmp>::operator[] (const kT& x){
   std::cout << "l-value subscript\n";
-  //const std::pair<const kT, vT> input{x,vT{}};
-  auto info {insert(std::pair<const kT, vT> {x,vT{}})};
+  const std::pair<const kT, vT> input{x,vT{}};
+  auto info {insert(input)};
   return (info.first)->second;
 
 
@@ -255,8 +306,12 @@ vT& bst<kT,vT,cmp>::operator[] (const kT& x){
 template <typename kT, typename vT, typename cmp>
 vT& bst<kT,vT,cmp>::operator[] (kT&& x){
   std::cout << "r-value subscript\n";
-  auto info {insert(std::pair< kT, vT>{std::move(x),vT{}})};
-
+  //auto vvv {std::pair<const kT, vT>{kT{},vT{}}};                // not working
+  auto info2 {std::pair<const resource, vT>{kT{},vT{}}};    // works
+  std::cout << "________\n";
+  auto info {insert(std::pair<const kT, vT>{std::move(x),vT{}})};
+  //std::pair<const kT, vT> input = std::make_pair(std::move(x), vT{});
+  //auto info {insert(std::move(input))};
   
   return (info.first)->second;
   
@@ -303,46 +358,7 @@ _iterator<node_t, O>& _iterator<node_t, O>::operator++() noexcept  // pre-increm
 
 }
 
-class resource {
-private:
-  int x;
-public:
 
-  resource(): x{5} {std::cout << "Resource default constructed\n";}
-
-  resource(const resource &res): x{res.x} {std::cout << "Resource copy constructed\n";}
-
-  resource& operator=(const resource &res) {
-    x = res.x;
-    std::cout << "Resource copy assigned\n";
-    return *this;
-  }
-
-  resource(resource &&res): x{std::move(res.x)} {std::cout << "Resource move constructed\n";}
-
-  resource& operator=(resource &&res) {
-    x = std::move(res.x);
-    std::cout << "Resource move assigned\n";
-    return *this;
-  }
-
-
-  void prova(std::pair<int,resource>&& pair) {
-    std::cout << "r-value called\n";
-  }
-
-  void prova(const std::pair<int,resource>& pair) {
-    std::cout << "l-value called\n";
-  }
-  
-  void printX() const {std::cout << "x= " << x << "\n";}
-
-  friend bool operator<(const resource &res1, const resource &res2);
-};
-
-bool operator<(const resource &res1, const resource &res2) {
-    return res1.x < res2.x;
-  }
 
 
 int main() {
@@ -402,29 +418,55 @@ int main() {
 
 ******************************************************/
 
-// (06/02) CHECK MOVE-COPY SEMANTICS
-
-  bst<int,char> prova{};
-  resource myres{};  // should be called default ctor
-  myres.printX();
-  std::pair<int,char> mypair {1, 'c'}; //should be called a copy ctor
+// (06/02) CHECK MOVE-COPY SEMANTICS WITH BUILT-IN TYPES
+/*
+  bst<const int,char> prova{};
+  std::pair<const int,char> mypair {1, 'c'}; //should be called a copy ctor
   std::cout << mypair.first << "\n";
   std::cout << "Now I insert an l value \n";
-  std::cout << &mypair;
   prova.insert(mypair); //should be called a copy ctor
   std::cout << " -------------------------- \n";
-/*
+
   std::cout << "\n Now I Insert r-value\n";
-  prova.insert(std::pair<int,resource>{2, resource{}} );
+  prova.insert(std::pair<const int,char>{2, 'd'} );
   //should be called a default ctor (resource{}) and move ctor inside insert to init std::pair
+
   std::cout << " -------------------------- \n";
-  std::cout << "\n SUBSCRIPT OPERATOR";
+  std::cout << "\n SUBSCRIPT OPERATOR\n";
   int prova_int = 2;
   std::cout << "L-value version : prova[myres]=" << prova[prova_int] << "\n";
   //should be called a copy ctor of std::pair
   std::cout << "R-value version : prova[myres]=" << prova[2] << "\n";
   //should be called a move ctor of std::pair
+*/
+// CHECK AGAIN WITH RESOURCE
+  std::cout << "\n\nRESOURCE--------------\n";
+  bst<const resource,char> tree{};
+  resource myres{};  // should be called default ctor
+  myres.printX();
 
+  std::pair<const resource,char> mypair_r {myres, 'c'}; //should be called a copy ctor
+
+  //std::cout << mypair_r.first << "\n";
+
+  std::cout << "Now I insert an l value \n";
+  tree.insert(mypair_r); //should be called a copy ctor
+  std::cout << " -------------------------- \n";
+
+  std::cout << "\n Now I Insert r-value\n";
+  tree.insert(std::pair<const resource,char>{resource{}, 'd'} );
+  //should be called a default ctor (resource{}) and move ctor inside insert to init std::pair
+
+  std::cout << " -------------------------- \n";
+  std::cout << "\n SUBSCRIPT OPERATOR\n";
+  resource ress{};
+  std::cout << "L-value version : prova[myres]=" << tree[ress] << "\n";
+  //should be called a copy ctor of std::pair
+  std::cout << "R-value version : prova[myres]=" << tree[resource{}] << "\n";
+  //should be called a move ctor of std::pair
+
+
+/*
   resource myres{};
   myres.printX();
   std::cout << "------------------";
@@ -451,7 +493,15 @@ int main() {
   std::cout << "should be l-value\n";
   std::pair<const int, char> myp {1,'c'};
   bbst.insert(myp);
-*/  
+*/
+  std::cout << "PAIR----------";
+  resource && x = resource{};
+  auto info {std::pair<const resource, char>{resource{},'c'}};
+  resource y{};
+  const resource z{};
+
+  auto test{std::pair<const resource, char>{std::move(z),'c'}};
+  
 
   return 0;
 }
