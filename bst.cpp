@@ -2,9 +2,25 @@
 #include <memory>
 #include <utility>
 #include <functional>
+#include <vector>
 
+class ball {
+private:
+  char color;
+  double radius;
+  int number;
+public:
+  ball(char col, double rad, int num): color{col}, radius{rad}, number{num} {}
+  friend bool operator<(const ball &b1, const ball &b2) {
+    return b1.radius < b2.radius;
+  }
 
+  friend std::ostream& operator<<(std::ostream& os, const ball& myball) {
+    os << myball.color ;
+    return os;    
+  }
 
+};
 
 class resource {
 private:
@@ -135,13 +151,21 @@ public:
 
   //std::pair<node_type*, where> locator(const kT& key);//move to private
 
-  /*
-  friend std::ostream& operator<<(std::ostream& os, const bst& mybst){
+  void clear() {root.reset();}
 
-    for(const_iterator it{mybst.begin()}; it!=mybst.end(); it++)
+  template< class... Types>
+  std::pair<iterator,bool> emplace(Types&&... args);
+
+  friend std::ostream& operator<<(std::ostream& os, const bst< kT,vT>& mybst){
+
+
+    for(auto it=mybst.begin(); it!=mybst.end(); it++)
       os << "( " << it->first << ", " << it->second << ")  ";
+
       return os;
- }*/
+
+
+ }
   
 private:
   cmp op;
@@ -205,7 +229,7 @@ template <typename kT, typename vT, typename cmp>
 std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const std::pair<const kT, vT> & new_pair) {
   std::cout << "l-value insert called\n";
   // here node_type is known
-  auto info {locator(new_pair.first)};    // get information of what to do from function locator
+  auto info = locator(new_pair.first);    // get information of what to do from function locator
 // info is std::pair of (node*, where)
 
   switch (info.second) {
@@ -233,7 +257,7 @@ template <typename kT, typename vT, typename cmp>
 std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(std::pair<const kT, vT> && new_pair) {
   std::cout << "r-value insert called\n";
   // here node_type is known
-  auto info {locator(new_pair.first)};    // get information of what to do from function locator
+  auto info = locator(new_pair.first);    // get information of what to do from function locator
 // info is std::pair of (node*, where)
 
   switch (info.second) {
@@ -258,12 +282,28 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(std::p
   
 }
 
+// EMPLACE FUNCTION
+template <typename kT, typename vT, typename cmp>
+template< class... Types>
+std::pair<typename bst<kT,vT,cmp>::iterator,bool> bst<kT,vT,cmp>::emplace(Types&&... args) {
+
+  auto info = std::pair<const kT,vT>{args...};
+  auto out = insert(info);
+  return out;
+  //return insert(std::pair<const kT,vT>{args...});
+    //elem[_size] = T{std::forward<Types>(args)...};
+
+
+}
+
+
+
 //FIND FUNCTION
 
 template <typename kT, typename vT, typename cmp>
 typename bst<kT,vT,cmp>::iterator bst<kT,vT,cmp>::find(const kT& x){
 
-  auto info{locator(x)};
+  auto info = locator(x);
 
   if(info.second == where::equal)
     return iterator{info.first};
@@ -308,7 +348,7 @@ template <typename kT, typename vT, typename cmp>
 vT& bst<kT,vT,cmp>::operator[] (const kT& x){
   std::cout << "l-value subscript\n";
   const std::pair<const kT, vT> input{x,vT{}};
-  auto info {insert(input)};
+  auto info = insert(input);
   return (info.first)->second;
 
 
@@ -319,9 +359,7 @@ vT& bst<kT,vT,cmp>::operator[] (const kT& x){
 template <typename kT, typename vT, typename cmp>
 vT& bst<kT,vT,cmp>::operator[] (kT&& x){
   std::cout << "r-value subscript\n";
-  //auto info2 {std::pair<const resource, vT>{kT{},vT{}}};    // works
-  //std::cout << "________\n";
-  auto info {insert(std::pair<const kT, vT>{std::move(x),vT{}})};
+  auto info = insert(std::pair<const kT, vT>{std::move(x),vT{}});
   
   return (info.first)->second;
   
@@ -342,9 +380,13 @@ template <typename kT, typename vT, typename cmp>
 _iterator<Node<std::pair<const kT, vT>>, const typename Node<std::pair<const kT, vT>>::value_type> bst<kT,vT,cmp>::begin() const
 {
   node_type* jumper{root.get()};
-  while(jumper->left)
-    jumper = (jumper->left).get();
-  return iterator{jumper};
+  if(!jumper)
+    return const_iterator{jumper}; 
+  else {
+    while(jumper->left)
+      jumper = (jumper->left).get();
+    return const_iterator{jumper};
+  }
 }
 
 
@@ -374,8 +416,10 @@ _iterator<node_t, O>& _iterator<node_t, O>::operator++() noexcept  // pre-increm
 int main() {
 
   // CHECK FOR BST IMPLEMENTATION 
-  /*
-    bst<const int,char> mybst{};   // calls the implicit default constructor
+  
+    bst<int,char> mybst{};   // calls the implicit default constructor
+
+std::cout << mybst << std::endl;
 
   auto p = std::pair<const int,char>{5,'c'};    // calls the constructor of std::pair
   auto output = mybst.insert(p);
@@ -404,15 +448,52 @@ int main() {
 
   std::cout<< "Key: 1, Value: " << value << std::endl;
 
+  std::cout << "print the tree: ";
+  
+ 
 
-********************************************************************************/
+  std::cout << mybst << std::endl;
+
+  mybst.clear();
+  std::cout << "print cleared tree:";
+  std::cout << mybst << std::endl;
+  mybst.insert(std::pair<const int,char>{56,'b'});
+  mybst.insert(std::pair<const int,char>{65,'e'});
+  std::cout << "print regenerated tree:";
+  std::cout << mybst << std::endl;
+
+  mybst.emplace(70, 'r');
+  std::cout << mybst << std::endl;
+
+
+// CHECK EMPLACE
+  bst<ball, int> bbst{};
+  ball myball{'c',2,2};
+  bbst.insert(std::pair<const ball, int>{ball('c', 4.4, 1), 3});
+  std::cout << bbst << std::endl;
+
+  //bbst.emplace(ball{'c', 4.4, 1}, 3);
+ // bbst.emplace({'c', 4.4, 1}, 3);     // così non funziona :-(
+
+  std::vector<ball> balls = {myball};
+
+  auto is = balls.emplace(balls.begin()+1, ball{'a', 4.4, 1});
+
+  for(auto x: balls){
+    std::cout << x << " ";
+  }
+
+
+  //auto ppp = std::pair<ball, int>({'c', 4.4, 1}, 3);
+
+/********************************************************************************
 
 
 
   
 // (06/02) CHECK MOVE-COPY SEMANTICS WITH BUILT-IN TYPES
   
-  bst<const int,char> prova{};
+  bst<int,char> prova{};
   std::pair<const int,char> mypair {1, 'c'}; //should be called a copy ctor
   std::cout << "Now I insert an l value \n";
   prova.insert(mypair); //should be called a copy ctor
@@ -434,7 +515,7 @@ int main() {
 // CHECK AGAIN WITH RESOURCE
   
   std::cout << "\n\nRESOURCE--------------\n";
-  bst<const resource,char> tree{};
+  bst<resource,char> tree{};
   resource myres{};  // should be called default ctor
 
   std::pair<const resource,char> mypair_r {myres, 'c'}; //should be called a copy ctor
@@ -445,8 +526,9 @@ int main() {
   tree.insert(mypair_r); //should be called a copy ctor
   std::cout << " -------------------------- \n";
 
+  bst<resource, int> tree2{};
   std::cout << "\n Now I Insert r-value\n";
-  tree.insert(std::pair<const resource,char>{resource{}, 'd'} );
+  tree2.insert(std::make_pair< resource,char>(resource{}, 'd') );
   //should be called a default ctor (resource{}) and move ctor inside insert to init std::pair
 
   std::cout << " -------------------------- \n";
@@ -458,7 +540,7 @@ int main() {
   //should be called a move ctor of std::pair
 
 
-
+tree.insert(std::make_pair<resource,char>({},'a'));
 
 
 
