@@ -28,7 +28,7 @@ private:
 public:
 
   resource(): x{5} {std::cout << "Resource default constructed\n";}
-
+  resource(const int &xx): x{xx} {std::cout << "Resource custom constructed\n";}
   resource(const resource &res): x{res.x} {std::cout << "Resource copy constructed\n";}
 
   resource& operator=(const resource &res) {
@@ -124,6 +124,8 @@ public:
     ++(*this);
     return tmp;
   }
+  template <typename kT, typename vT, typename cmp>
+  friend node_t* bst<kT,vT,cmp>::getPointer(_iterator it);
 };
 
 
@@ -156,6 +158,10 @@ public:
   template< class... Types>
   std::pair<iterator,bool> emplace(Types&&... args);
 
+  void erase(const kT& x);
+
+ 
+
   friend std::ostream& operator<<(std::ostream& os, const bst< kT,vT>& mybst){
 
 
@@ -163,9 +169,8 @@ public:
       os << "( " << it->first << ", " << it->second << ")  ";
 
       return os;
-
-
  }
+
   
 private:
   cmp op;
@@ -173,7 +178,7 @@ private:
 
   std::pair<node_type*, where> locator(const kT& key);
   // if the key is already present in a node, locator returns an iterator to this node and where=equal; if the key is not present and should go on the right child of a node, locator returns this node and where=right; similarly for left
-
+  node_type* getPointer(iterator it) {return it.current;}
 };
 
 // this is a support function used in insert(), find(), operator[]
@@ -286,13 +291,8 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(std::p
 template <typename kT, typename vT, typename cmp>
 template< class... Types>
 std::pair<typename bst<kT,vT,cmp>::iterator,bool> bst<kT,vT,cmp>::emplace(Types&&... args) {
-
-  auto info = std::pair<const kT,vT>{args...};
-  auto out = insert(info);
-  return out;
-  //return insert(std::pair<const kT,vT>{args...});
-    //elem[_size] = T{std::forward<Types>(args)...};
-
+  std::cout << "Entered emplace\n";
+  return insert(std::pair<const kT,vT>{std::forward<Types>(args)...});
 
 }
 
@@ -364,6 +364,40 @@ vT& bst<kT,vT,cmp>::operator[] (kT&& x){
   return (info.first)->second;
   
 }
+
+template <typename kT, typename vT, typename cmp>
+void bst<kT,vT,cmp>::erase(const kT& x) {
+  // find node to be erased and get an iterator pointing to it
+  auto eraseme = (locator(x)).first;
+ 
+// README   if key does not exist...
+
+
+  std::cout << "eraseme: " << eraseme->value.first << "\n";
+  std::cout << "eraseme right: " << eraseme->right->value.first << "\n";
+  // attach the right subtree of eraseme node to the right child of the eraseme's parent
+  eraseme->parent->right.release();
+  std::cout << "eraseme right: " << eraseme->right->value.first << "\n";
+  //(eraseme->parent)->right = (eraseme->right).release();
+  (eraseme->parent)->right = std::move(eraseme->right);
+  std::cout << "Check what is happening:\n";
+  std::cout << "eraseme: " << eraseme->value.first << "\n";
+  std::cout << "eraseme.parent.right: " << eraseme->parent->right->value.first << "\n";
+  auto it = (iterator{eraseme->parent});
+  std::cout << "it " << it->first << "\n";
+  ++it;
+  std::cout << "++it " << it->first << "\n";
+  auto a = getPointer(it);
+  // attach the left subtree of eraseme node to the leftmost node of right subtree
+  //auto it = (iterator{eraseme});
+  //std::cout << "leftmost " << it->first << "\n";
+  //it++;
+  //std::cout << "leftmost " << it->first << "\n";
+
+  
+}
+
+
 
 //ITERATOR'S FUNCTIONS
 
@@ -454,27 +488,34 @@ std::cout << mybst << std::endl;
 
   std::cout << mybst << std::endl;
 
-  mybst.clear();
+  /*mybst.clear();
   std::cout << "print cleared tree:";
   std::cout << mybst << std::endl;
   mybst.insert(std::pair<const int,char>{56,'b'});
   mybst.insert(std::pair<const int,char>{65,'e'});
   std::cout << "print regenerated tree:";
   std::cout << mybst << std::endl;
-
+*/
+  mybst.emplace(8, 'a');
+ //auto it = mybst.find(7);
+  //++it;
+  //std::cout << "++it " << it->first << "\n";
+  std::cout << "erase:";
+  mybst.erase(7);
+/*
+// CHECK EMPLACE
   mybst.emplace(70, 'r');
   std::cout << mybst << std::endl;
 
-
-// CHECK EMPLACE
   bst<ball, int> bbst{};
   ball myball{'c',2,2};
   bbst.insert(std::pair<const ball, int>{ball('c', 4.4, 1), 3});
   std::cout << bbst << std::endl;
 
-  //bbst.emplace(ball{'c', 4.4, 1}, 3);
+  bbst.emplace(ball{'c', 4.4, 1}, 3);
  // bbst.emplace({'c', 4.4, 1}, 3);     // così non funziona :-(
 
+/*
   std::vector<ball> balls = {myball};
 
   auto is = balls.emplace(balls.begin()+1, ball{'a', 4.4, 1});
@@ -482,6 +523,7 @@ std::cout << mybst << std::endl;
   for(auto x: balls){
     std::cout << x << " ";
   }
+*/
 
 
   //auto ppp = std::pair<ball, int>({'c', 4.4, 1}, 3);
@@ -540,9 +582,10 @@ std::cout << mybst << std::endl;
   //should be called a move ctor of std::pair
 
 
-tree.insert(std::make_pair<resource,char>({},'a'));
 
 
+  std::cout << "I emplace\n";
+  tree.emplace(resource{77}, 'f');
 
 
 
@@ -586,6 +629,12 @@ tree.insert(std::make_pair<resource,char>({},'a'));
   auto test{std::pair<const resource, char>{std::move(z),'c'}};
 */  
 
+/*
+  std::unique_ptr<int> auto_pointer (new int);
+  std::unique_ptr<int> manual_pointer (new int);
+  *auto_pointer = 10;
+  manual_pointer = auto_pointer.release();
+*/
   return 0;
 }
 
