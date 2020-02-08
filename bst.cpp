@@ -4,6 +4,8 @@
 #include <functional>
 #include <vector>
 
+
+
 class ball {
 private:
   char color;
@@ -97,10 +99,13 @@ public:
   }  // calls move constructor of type T
 };
 
+template <typename kT, typename vT, typename cmp>
+class bst;
 
 template <typename node_t, typename O>
 class _iterator {
   node_t* current;
+
 public: 
   using value_type = O;// typename node_t::value_type;
   using reference = value_type&;
@@ -124,8 +129,9 @@ public:
     ++(*this);
     return tmp;
   }
-  template <typename kT, typename vT, typename cmp>
-  friend node_t* bst<kT,vT,cmp>::getPointer(_iterator it);
+
+template <typename kT, typename vT, typename cmp>
+  friend void bst<kT,vT,cmp>::erase(const kT& x);  // così posso fare iterator.current (non servirebbe getPointer)
 };
 
 
@@ -178,7 +184,7 @@ private:
 
   std::pair<node_type*, where> locator(const kT& key);
   // if the key is already present in a node, locator returns an iterator to this node and where=equal; if the key is not present and should go on the right child of a node, locator returns this node and where=right; similarly for left
-  node_type* getPointer(iterator it) {return it.current;}
+
 };
 
 // this is a support function used in insert(), find(), operator[]
@@ -368,32 +374,32 @@ vT& bst<kT,vT,cmp>::operator[] (kT&& x){
 template <typename kT, typename vT, typename cmp>
 void bst<kT,vT,cmp>::erase(const kT& x) {
   // find node to be erased and get an iterator pointing to it
-  auto eraseme = (locator(x)).first;
- 
+  auto mypair = locator(x);
+  auto eraseme = mypair.first;
+  if(mypair.second!=where::equal)
+    return;
+
 // README   if key does not exist...
 
-
-  std::cout << "eraseme: " << eraseme->value.first << "\n";
-  std::cout << "eraseme right: " << eraseme->right->value.first << "\n";
-  // attach the right subtree of eraseme node to the right child of the eraseme's parent
-  eraseme->parent->right.release();
-  std::cout << "eraseme right: " << eraseme->right->value.first << "\n";
-  //(eraseme->parent)->right = (eraseme->right).release();
-  (eraseme->parent)->right = std::move(eraseme->right);
-  std::cout << "Check what is happening:\n";
-  std::cout << "eraseme: " << eraseme->value.first << "\n";
-  std::cout << "eraseme.parent.right: " << eraseme->parent->right->value.first << "\n";
-  auto it = (iterator{eraseme->parent});
-  std::cout << "it " << it->first << "\n";
-  ++it;
-  std::cout << "++it " << it->first << "\n";
-  auto a = getPointer(it);
-  // attach the left subtree of eraseme node to the leftmost node of right subtree
-  //auto it = (iterator{eraseme});
-  //std::cout << "leftmost " << it->first << "\n";
-  //it++;
-  //std::cout << "leftmost " << it->first << "\n";
-
+  if(eraseme->right) {
+    // attach the right subtree of eraseme node to the right child of the eraseme's parent
+    eraseme->parent->right.release();     // FORSE SI PUÒ ELIMINARE
+    eraseme->right->parent = eraseme->parent;
+    (eraseme->parent)->right = std::move(eraseme->right);
+    if(eraseme->left) {
+      auto it = (iterator{eraseme->parent});
+      ++it;
+      (it.current)->left = std::move(eraseme->left);
+      it.current->left->parent = it.current;
+    }
+  }
+  else if(eraseme->left) {
+    eraseme->parent->right.release();     // FORSE SI PUÒ ELIMINARE
+    eraseme->left->parent = eraseme->parent;
+    (eraseme->parent)->left = std::move(eraseme->left);
+  }
+  // eraseme->parent = nullptr;
+  delete eraseme;
   
 }
 
@@ -497,11 +503,25 @@ std::cout << mybst << std::endl;
   std::cout << mybst << std::endl;
 */
   mybst.emplace(8, 'a');
+  mybst.emplace(6, 'a');
  //auto it = mybst.find(7);
   //++it;
   //std::cout << "++it " << it->first << "\n";
   std::cout << "erase:";
-  mybst.erase(7);
+  mybst.erase(3);
+
+  std::cout << "Print final tree:\n";
+  std::cout << mybst;
+
+  mybst.clear();
+  std::cout << "PRINT\n";
+  mybst.emplace(6, 'a');
+  mybst.emplace(4, 'a');
+  mybst.emplace(5, 'a');
+  mybst.emplace(3, 'a');
+  std::cout << mybst;
+  mybst.erase(4);
+  std::cout << mybst;
 /*
 // CHECK EMPLACE
   mybst.emplace(70, 'r');
@@ -635,6 +655,9 @@ std::cout << mybst << std::endl;
   *auto_pointer = 10;
   manual_pointer = auto_pointer.release();
 */
+
+
+
   return 0;
 }
 
