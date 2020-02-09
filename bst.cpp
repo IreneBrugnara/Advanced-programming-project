@@ -379,28 +379,68 @@ void bst<kT,vT,cmp>::erase(const kT& x) {
   if(mypair.second!=where::equal)
     return;
 
-// README   if key does not exist...
+  // A=B  attach left subtree of eraseme to the leftmost node of the right subtree of eraseme
+  if (eraseme->right && eraseme->left) {
+    auto it = iterator{eraseme};
+    ++it;
+    (it.current)->left = std::move(eraseme->left);
+    it.current->left->parent = it.current;
+  }
 
-  if(eraseme->right) {
-    // attach the right subtree of eraseme node to the right child of the eraseme's parent
-    eraseme->parent->right.release();     // FORSE SI PUÒ ELIMINARE
-    eraseme->right->parent = eraseme->parent;
-    (eraseme->parent)->right = std::move(eraseme->right);
-    if(eraseme->left) {
-      auto it = (iterator{eraseme->parent});
-      ++it;
-      (it.current)->left = std::move(eraseme->left);
-      it.current->left->parent = it.current;
+// SE ERASEME È LA ROOT
+  if(!eraseme->parent) {
+    eraseme->right->parent = nullptr;
+    root = std::move(eraseme->right);
+   
+    return;
+  }
+
+// SE ERASEME È UN FIGLIO DESTRO
+  if(eraseme->parent->right.get()==eraseme) {
+    if(eraseme->right) {
+// P=Q  attach right subtree of eraseme to the parent of eraseme
+      eraseme->right->parent = eraseme->parent;
+      (eraseme->parent)->right = std::move(eraseme->right);  // this also deletes eraseme (through reset)
+    }
+    else if (eraseme->left) { 
+      eraseme->left->parent = eraseme->parent;
+      (eraseme->parent)->right = std::move(eraseme->left);  // this also deletes eraseme (through reset)
+    }  
+    else {
+      (eraseme->parent->right).reset();
     }
   }
-  else if(eraseme->left) {
-    eraseme->parent->right.release();     // FORSE SI PUÒ ELIMINARE
-    eraseme->left->parent = eraseme->parent;
-    (eraseme->parent)->left = std::move(eraseme->left);
+
+  else {
+// SE ERASEME È UN FIGLIO SINISTRO
+// A=B  attach left subtree of eraseme to the leftmost node of the right subtree of eraseme
+    if (eraseme->right){
+// P=Q  attach right subtree of eraseme to the parent of eraseme
+      eraseme->right->parent = eraseme->parent;
+      (eraseme->parent)->left = std::move(eraseme->right);  // this also deletes eraseme (through reset)
+    }
+    else if (eraseme->left) { 
+      eraseme->left->parent = eraseme->parent;
+      (eraseme->parent)->left = std::move(eraseme->left);  // this also deletes eraseme (through reset)
+    }  
+    else {
+      (eraseme->parent->left).reset();
+    }
+
   }
-  // eraseme->parent = nullptr;
-  delete eraseme;
-  
+
+/*
+  auto itt = begin();
+  itt++;
+  itt++;
+  itt++;
+  itt++;
+  itt++;
+  std::cout << itt->first ;
+*/
+
+// README   if key does not exist...
+
 }
 
 
@@ -515,13 +555,22 @@ std::cout << mybst << std::endl;
 
   mybst.clear();
   std::cout << "PRINT\n";
+  mybst.emplace(8, 'a');
+  mybst.emplace(3, 'a');
+  mybst.emplace(10, 'a');
+  mybst.emplace(1, 'a');
   mybst.emplace(6, 'a');
   mybst.emplace(4, 'a');
-  mybst.emplace(5, 'a');
-  mybst.emplace(3, 'a');
+  mybst.emplace(7, 'a');
+  mybst.emplace(14, 'a');
+  mybst.emplace(13, 'a');
+  std::cout << "Before erase:\n";
   std::cout << mybst;
-  mybst.erase(4);
-  std::cout << mybst;
+  mybst.erase(8);
+  std::cout << "\nAfter erase:\n";
+  std::cout << mybst << "\n";
+
+
 /*
 // CHECK EMPLACE
   mybst.emplace(70, 'r');
