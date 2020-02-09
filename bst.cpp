@@ -3,7 +3,7 @@
 #include <utility>
 #include <functional>
 #include <vector>
-
+#include <string>
 
 
 class ball {
@@ -97,6 +97,15 @@ public:
   Node(T&& val, Node* p): value{std::move(val)}, parent{p} {
     std::cout << "Node move constructed\n";
   }  // calls move constructor of type T
+  explicit Node(const std::unique_ptr<Node>& p, Node* myparent): value{p->value}, parent{myparent} {      // ad-hoc constructor for bst copy
+    if(p->right)
+      right = std::make_unique<Node>(p->right, this);
+    if(p->left)
+      left = std::make_unique<Node>(p->left, this);
+    std::cout << "I am inside Node constructor";
+  }
+
+
 };
 
 template <typename kT, typename vT, typename cmp>
@@ -141,25 +150,37 @@ public:
   bst(cmp x): op{x} {}      // custom constructor
   using node_type = Node<std::pair<const kT, vT>>;
   bst() noexcept = default;      // default constructor
+  bst(const bst & b) {            // copy constructor
+    root = std::make_unique<node_type>(b.root, nullptr);
+  }
+  bst& operator=(const bst& b) {    // copy assignment
+    root = std::make_unique<node_type>(b.root, nullptr);
+    return *this;
+  }
+  bst& operator=(bst&& b) noexcept = default;     // move assignment
+  bst(bst&& b) noexcept = default;                // move constructor
   //begin, end
   using iterator = _iterator<node_type, typename node_type::value_type>;
   using const_iterator = _iterator<node_type, const typename node_type::value_type>;
   std::pair<iterator, bool> insert(const std::pair<const kT, vT> &);
   std::pair<iterator, bool> insert(std::pair<const kT, vT> &&);
   iterator find(const kT& x); 
-  void print_tree(node_type*);   // just for us to debug and check tree structure
-  iterator begin();
-  iterator end() { return iterator{nullptr}; }
+  void print_tree(node_type*) const;   // just for us to debug and check tree structure - move to private when submitting
+  void call_print_tree() {print_tree(root.get());}
+  iterator begin() noexcept;
+  iterator end() noexcept { return iterator{nullptr}; }
 
   vT& operator[] (const kT& x);
   vT& operator[] (kT&& x);
 
-  const_iterator begin() const;
-  const_iterator end() const { return const_iterator{nullptr}; }
+  const_iterator begin() const noexcept;
+  const_iterator cbegin() const noexcept;
+  const_iterator end() const noexcept { return const_iterator{nullptr}; }
+  const_iterator cend() const noexcept { return const_iterator{nullptr}; }
 
   //std::pair<node_type*, where> locator(const kT& key);//move to private
 
-  void clear() {root.reset();}
+  void clear() noexcept {root.reset();}
 
   template< class... Types>
   std::pair<iterator,bool> emplace(Types&&... args);
@@ -168,13 +189,10 @@ public:
 
  
 
-  friend std::ostream& operator<<(std::ostream& os, const bst< kT,vT>& mybst){
-
-
-    for(auto it=mybst.begin(); it!=mybst.end(); it++)
-      os << "( " << it->first << ", " << it->second << ")  ";
-
-      return os;
+friend std::ostream& operator<<(std::ostream& os, const bst< kT,vT>& mybst){
+  for(auto it=mybst.begin(); it!=mybst.end(); it++)
+    os << "( " << it->first << ", " << it->second << ")  ";
+  return os;
  }
 
   
@@ -193,8 +211,7 @@ std::pair<typename bst<kT,vT,cmp>::node_type*, where> bst<kT,vT,cmp>::locator(co
 
   // here node_type is known
   node_type* jumper {root.get()};
-  bool flag{0};     // just to signal when we have to exit from while loop
-
+  
   if(!jumper) {     // if the tree is empty, create root node
     return std::pair<node_type*, where>{root.get(), where::empty};
    }
@@ -259,8 +276,8 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const 
       (info.first)->left = std::make_unique<node_type>(new_pair, (info.first));
       return std::pair<iterator, bool>{iterator{(info.first)->left.get()}, true};
     }
-
-     //default:
+    default:      // this case should never occur
+      return std::pair<iterator, bool>{iterator{nullptr}, false};
   }
 }
 
@@ -287,8 +304,8 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(std::p
       (info.first)->left = std::make_unique<node_type>(std::move(new_pair), (info.first));
       return std::pair<iterator, bool>{iterator{(info.first)->left.get()}, true};
     }
-
-     //default:
+   default:
+     return std::pair<iterator, bool>{iterator{nullptr}, false};
   }
   
 }
@@ -322,7 +339,7 @@ typename bst<kT,vT,cmp>::iterator bst<kT,vT,cmp>::find(const kT& x){
 //PRINT FUNCTION (JUST FOR CHECK)
 
 template <typename kT, typename vT, typename cmp>
-void bst<kT,vT,cmp>::print_tree(node_type* jumper) {
+void bst<kT,vT,cmp>::print_tree(node_type* jumper) const {
                       //node_type* jumper{root.get()};
 
   std::cout << jumper->value.first;
@@ -429,18 +446,6 @@ void bst<kT,vT,cmp>::erase(const kT& x) {
 
   }
 
-/*
-  auto itt = begin();
-  itt++;
-  itt++;
-  itt++;
-  itt++;
-  itt++;
-  std::cout << itt->first ;
-*/
-
-// README   if key does not exist...
-
 }
 
 
@@ -448,7 +453,7 @@ void bst<kT,vT,cmp>::erase(const kT& x) {
 //ITERATOR'S FUNCTIONS
 
 template <typename kT, typename vT, typename cmp>
-_iterator<Node<std::pair<const kT, vT>>, typename Node<std::pair<const kT, vT>>::value_type> bst<kT,vT,cmp>::begin()
+_iterator<Node<std::pair<const kT, vT>>, typename Node<std::pair<const kT, vT>>::value_type> bst<kT,vT,cmp>::begin() noexcept
 {
   node_type* jumper{root.get()};
   while(jumper->left)
@@ -457,7 +462,7 @@ _iterator<Node<std::pair<const kT, vT>>, typename Node<std::pair<const kT, vT>>:
 }
 
 template <typename kT, typename vT, typename cmp>
-_iterator<Node<std::pair<const kT, vT>>, const typename Node<std::pair<const kT, vT>>::value_type> bst<kT,vT,cmp>::begin() const
+_iterator<Node<std::pair<const kT, vT>>, const typename Node<std::pair<const kT, vT>>::value_type> bst<kT,vT,cmp>::begin() const noexcept
 {
   node_type* jumper{root.get()};
   if(!jumper)
@@ -484,17 +489,15 @@ _iterator<node_t, O>& _iterator<node_t, O>::operator++() noexcept  // pre-increm
     while((current->parent) && ((current->parent)->right).get() == current)
       current = current->parent;          // go up
     current = current->parent;    // one more jump
-    return *this;
-
   }
-
+  return *this;
 }
 
 
 //MAIN
 
 int main() {
-
+/*
   // CHECK FOR BST IMPLEMENTATION 
   
     bst<int,char> mybst{};   // calls the implicit default constructor
@@ -541,7 +544,7 @@ std::cout << mybst << std::endl;
   mybst.insert(std::pair<const int,char>{65,'e'});
   std::cout << "print regenerated tree:";
   std::cout << mybst << std::endl;
-*/
+
   mybst.emplace(8, 'a');
   mybst.emplace(6, 'a');
  //auto it = mybst.find(7);
@@ -570,6 +573,26 @@ std::cout << mybst << std::endl;
   std::cout << "\nAfter erase:\n";
   std::cout << mybst << "\n";
 
+  std::cout << "TRY TO COPY CONSTRUCT BST\n";
+  bst<int, char> mylist {mybst}; 
+  std::cout << mylist << "\n";
+  mybst.erase(6);
+  std::cout << mybst << "\n";       // check if really deep copy
+  std::cout << mylist << "\n";
+  std::cout << "TRY TO MOVE CONSTRUCT BST\n";
+  bst<int, char> mydata {std::move(mylist)};
+  std::cout << mylist << "\n";
+  std::cout << mydata << "\n"; 
+  std::cout << "TRY TO COPY ASSIGN BST\n";
+  mylist = mydata;
+  std::cout << mylist << "\n";
+  std::cout << mydata << "\n";
+  mydata.erase(6);
+  std::cout << mylist << "\n";
+  std::cout << mydata << "\n";
+  mylist = std::move(mydata);
+  std::cout << mylist << "\n";
+  std::cout << mydata << "\n";
 
 /*
 // CHECK EMPLACE
@@ -705,6 +728,48 @@ std::cout << mybst << std::endl;
   manual_pointer = auto_pointer.release();
 */
 
+  std::cout << "BIG TREE\n";
+  bst<int, std::string> albero;
+  albero.emplace(82, "IL Nicola");
+  albero.emplace(96, "Roberto");
+  albero.emplace(22, "Irene");
+  albero.emplace(45, "Ema");
+  albero.emplace(-1, "Cosimo");
+  albero.emplace(17, "Lorenzo");
+  albero.emplace(40, "Arianna");
+  albero.emplace(32, "Matteo");
+  albero.emplace(1, "Pres");
+  albero.emplace(24, "Leo");
+  albero.emplace(100, "Andrea");
+  albero.emplace(73, "Victor");
+  albero.emplace(46, "Azza");
+  albero.emplace(12, "Nicolas");
+  albero.emplace(78, "Michele");
+  albero.emplace(33, "Angela");
+  albero.emplace(43, "Paolo");
+  albero.emplace(56, "Matilde");
+  albero.emplace(90, "Keerthana");
+  albero.emplace(55, "Dogan");
+  albero.emplace	(88, "Giullia");
+
+  std::cout << albero << std::endl;
+  albero.call_print_tree();
+
+  albero.erase(96);
+  albero.erase(-1);
+  albero.erase(22);
+  albero.erase(45);
+  
+  std::cout << albero << std::endl;
+  std::cout << "albero[82] = " << albero[82] << "\n";
+  std::cout << "albero[24] = " << albero[24] << "\n";
+
+  std::cout << "find 1: " << albero.find(1)->second << "\n";
+
+  bst<int, std::string> albero2 = albero;
+
+  albero.clear();
+  std::cout << albero << std::endl;
 
 
   return 0;
