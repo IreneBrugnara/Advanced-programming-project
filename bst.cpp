@@ -65,7 +65,10 @@ public:
   
   void printX() const {std::cout << "x= " << x << "\n";}
 
-  
+  friend std::ostream& operator<< (std::ostream& os, const resource &res){
+        os << res.x;
+        return os;
+  }  
 
   friend bool operator<(const resource &res1, const resource &res2);
 };
@@ -103,8 +106,16 @@ public:
     if(p->left)
       left = std::make_unique<Node>(p->left, this);
     std::cout << "I am inside Node constructor";
+    // if *p is a terminal node, the two if conditions are not met and the members right and left are initialized to nullptr by default
   }
-
+  Node(std::vector<T> &v, int start, int end, Node* myparent): value {std::move(v[(start+end)/2])}, parent{myparent} {
+    std::cout << "I am inside Node constructor";
+    int M{(start+end)/2};
+    if(start<=M-1)
+      left = std::make_unique<Node>(v, start, M-1, this);
+    if(M+1<=end)
+      right = std::make_unique<Node>(v, M+1, end, this);
+  }
 
 };
 
@@ -140,7 +151,7 @@ public:
   }
 
 template <typename kT, typename vT, typename cmp>
-  friend void bst<kT,vT,cmp>::erase(const kT& x);  // così posso fare iterator.current (non servirebbe getPointer)
+  friend void bst<kT,vT,cmp>::erase(const kT& x);  // così posso fare iterator.current
 };
 
 
@@ -187,7 +198,7 @@ public:
 
   void erase(const kT& x);
 
- 
+  void balance();
 
 friend std::ostream& operator<<(std::ostream& os, const bst< kT,vT>& mybst){
   for(auto it=mybst.begin(); it!=mybst.end(); it++)
@@ -448,6 +459,21 @@ void bst<kT,vT,cmp>::erase(const kT& x) {
 
 }
 
+
+// BALANCE FUNCTION
+template <typename kT, typename vT, typename cmp>
+void bst<kT, vT, cmp>::balance() {
+  std::vector<std::pair<const kT, vT>> myarr;
+  std::cout << "Inside balance()\n";
+  for(auto it=begin(); it!=end(); ++it){
+    std::cout<<"--------\n";    
+    myarr.push_back(std::move(*it));
+  }
+  std::cout << "Finish to fill the vector\n";
+  clear();
+  root = std::make_unique<node_type>(myarr, 0, myarr.size()-1, nullptr);
+
+}
 
 
 //ITERATOR'S FUNCTIONS
@@ -726,7 +752,7 @@ std::cout << mybst << std::endl;
   std::unique_ptr<int> manual_pointer (new int);
   *auto_pointer = 10;
   manual_pointer = auto_pointer.release();
-*/
+
 
   std::cout << "BIG TREE\n";
   bst<int, std::string> albero;
@@ -750,7 +776,7 @@ std::cout << mybst << std::endl;
   albero.emplace(56, "Matilde");
   albero.emplace(90, "Keerthana");
   albero.emplace(55, "Dogan");
-  albero.emplace	(88, "Giullia");
+  albero.emplace	(88, "Giulllia");
 
   std::cout << albero << std::endl;
   albero.call_print_tree();
@@ -771,6 +797,23 @@ std::cout << mybst << std::endl;
   albero.clear();
   std::cout << albero << std::endl;
 
+*/
+
+  bst<resource, char> forest;
+
+  forest.emplace(resource{1}, 'a');
+  forest.emplace(resource{2}, 'a');
+  forest.emplace(resource{3}, 'a');
+  forest.emplace(resource{4}, 'a');
+  
+  std::cout << "\n START BALANCE\n" ;
+  std::cout << forest << "\n";
+  forest.call_print_tree();
+  forest.balance();
+  std::cout << "\n" << forest << "\n";
+  forest.call_print_tree();
+
+  
 
   return 0;
 }
