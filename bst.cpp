@@ -799,12 +799,12 @@ std::cout << mybst << std::endl;
 
 */
 
-  bst<resource, char> forest;
+  bst<resource, resource> forest;
 
-  forest.emplace(resource{1}, 'a');
-  forest.emplace(resource{2}, 'a');
-  forest.emplace(resource{3}, 'a');
-  forest.emplace(resource{4}, 'a');
+  forest.emplace(resource{1}, resource{1});
+  forest.emplace(resource{2}, resource{1});
+  forest.emplace(resource{3}, resource{1});
+  forest.emplace(resource{4}, resource{1});
   
   std::cout << "\n START BALANCE\n" ;
   std::cout << forest << "\n";
