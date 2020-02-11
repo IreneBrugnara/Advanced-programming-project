@@ -1,6 +1,6 @@
 #include <iostream>
-#include <memory>
-#include <utility>
+#include <memory>   // smart pointer
+#include <utility>  // std::pair
 #include <functional>
 #include <vector>
 #include <string>
