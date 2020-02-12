@@ -23,7 +23,7 @@ public:
   Node(T&& val, Node* p): value{std::move(val)}, parent{p} {
     std::cout << "Node move constructed\n";
   }  // calls move constructor of type T
-  explicit Node(const std::unique_ptr<Node>& p, Node* myparent): value{p->value}, parent{myparent} {      // ad-hoc constructor for bst copy
+  Node(const std::unique_ptr<Node>& p, Node* myparent): value{p->value}, parent{myparent} {      // ad-hoc constructor for bst copy
     if(p->right)
       right = std::make_unique<Node>(p->right, this);
     if(p->left)
