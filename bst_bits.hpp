@@ -59,7 +59,6 @@ std::pair<typename bst<kT,vT,cmp>::node_type*, where> bst<kT,vT,cmp>::locator(co
 
 template <typename kT, typename vT, typename cmp>
 std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const std::pair<const kT, vT> & new_pair) {
-  std::cout << "l-value insert called\n";
   // here node_type is known
   auto info = locator(new_pair.first);    // get information of what to do from function locator
 // info is std::pair of (node*, where)
@@ -87,7 +86,6 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const 
 
 template <typename kT, typename vT, typename cmp>
 std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(std::pair<const kT, vT> && new_pair) {
-  std::cout << "r-value insert called\n";
   // here node_type is known
   auto info = locator(new_pair.first);    // get information of what to do from function locator
 // info is std::pair of (node*, where)
@@ -118,7 +116,6 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(std::p
 template <typename kT, typename vT, typename cmp>
 template< class... Types>
 std::pair<typename bst<kT,vT,cmp>::iterator,bool> bst<kT,vT,cmp>::emplace(Types&&... args) {
-  std::cout << "Entered emplace\n";
   return insert(std::pair<const kT,vT>{std::forward<Types>(args)...});
 
 }
@@ -173,7 +170,6 @@ void bst<kT,vT,cmp>::print_tree(node_type* jumper) const {
 
 template <typename kT, typename vT, typename cmp>
 vT& bst<kT,vT,cmp>::operator[] (const kT& x){
-  std::cout << "l-value subscript\n";
   const std::pair<const kT, vT> input{x,vT{}};
   auto info = insert(input);
   return (info.first)->second;
@@ -185,7 +181,6 @@ vT& bst<kT,vT,cmp>::operator[] (const kT& x){
 
 template <typename kT, typename vT, typename cmp>
 vT& bst<kT,vT,cmp>::operator[] (kT&& x){
-  std::cout << "r-value subscript\n";
   auto info = insert(std::pair<const kT, vT>{std::move(x),vT{}});
   
   return (info.first)->second;
@@ -257,12 +252,10 @@ void bst<kT,vT,cmp>::erase(const kT& x) {
 template <typename kT, typename vT, typename cmp>
 void bst<kT, vT, cmp>::balance() {
   std::vector<std::pair<const kT, vT>> myarr;
-  std::cout << "Inside balance()\n";
   for(auto it=begin(); it!=end(); ++it){
     std::cout<<"--------\n";    
     myarr.push_back(std::move(*it));
   }
-  std::cout << "Finish to fill the vector\n";
   clear();
   root = std::make_unique<node_type>(myarr, 0, myarr.size()-1, nullptr);
 
