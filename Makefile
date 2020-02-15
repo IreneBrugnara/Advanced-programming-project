@@ -1,12 +1,23 @@
-CXX = c++
+CXX = g++
 FLAGS = -Wall -Wextra -std=c++14
-SRC = bst.hpp
-OBJ = $(SRC:.hpp=.o)
+TEST_SRC = test.cpp
+TEST_EXE = test
+BNCH_SRC = benchmark.cpp
+BNCH_EXE = benchmark
+INCLUDE = bst
 
-all: $(OBJ)
+all: $(TEST_EXE) $(BNCH_EXE)
 
-$(OBJ): $(SRC)
-	$(CXX) $^ -o $@ -c $(FLAGS)
+$(TEST_EXE): $(TEST_SRC)
+	$(CXX) $^ -o $@ -I $(INCLUDE) $(FLAGS)
+
+$(BNCH_EXE): $(BNCH_SRC)
+	$(CXX) $^ -o $@ -I $(INCLUDE) $(FLAGS)
+
+plot_benchmark.png: graph_benchmark.gp
+	gnuplot $^
 
 clean:
-	rm -f $(OBJ)
+	rm -fr $(TEST_EXE) $(BNCH_EXE)
+
+.PHONY: clean all
