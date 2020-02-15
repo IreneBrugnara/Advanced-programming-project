@@ -1,110 +1,70 @@
 #include "bst.hpp"
-#include <chrono>			// to measure time
+#include <iostream>
 #include <map>
-#include <cstdlib>		// for random number generation
-#include <unistd.h>
+#include <chrono>			 // to measure time
 #include <algorithm>   // for random_shuffle
-#include <fstream>
-
-int main() {
-  
-  std::srand(static_cast<unsigned int>(std::time(nullptr))); // set initial seed value to system clock
+#include <fstream>		 // to write data on file
 
 
-  std::map<int,int> mybst;
-  int N{1000000};				// number of nodes
-  std::cout << N << "\n";
-  auto t0 = std::chrono::high_resolution_clock::now();
-  for(int i{0}; i<N; ++i) {
-    mybst.insert({i, i});
-  }
-	auto t1 = std::chrono::high_resolution_clock::now();
-	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0);
-  std::cout << "Elapsed " << elapsed.count()/double(N)  << " [microseconds]" << std::endl;
+int main(){
 
-
-  auto t0_prova = std::chrono::high_resolution_clock::now();
-	auto it = mybst.find(N-1);
-  std::cout << "searched " << N-1 << "found " <<  it->first << "\n";
-  //usleep(N);
-
-	/*
-  for(int i{0}; i<N; ++i) {
-		mymap.find(i);
-	}*/
-	auto t1_prova = std::chrono::high_resolution_clock::now();
-	auto elapsed_prova = std::chrono::duration_cast<std::chrono::microseconds>(t1_prova-t0_prova);
-  std::cout << "Elapsed " << elapsed_prova.count()  << " [microseconds]" << std::endl;
-
-
-/*
+// open file where to put data
 	std::ofstream outFile;
-	outFile.open("out.txt");
-  constexpr int N{50000};			// maximum number of nodes in tree
-  constexpr int D{1000};							// dimension of block (how many nodes to insert before starting to find them)
-  constexpr int B{N/D};							// total number of blocks
+	outFile.open("data_benchmark.txt");
 
-// create a vector of unique random numbers
-  std::vector<int> numbers;
-	outFile << "# N \t T \n";
-  for(int i{0}; i<N; ++i)
+// create vector of unique random numbers from 0 to N_max-1
+	int N_max {10000};
+	std::vector<int> numbers;
+  for(int i{0}; i<N_max; ++i)
     numbers.push_back(i);
   std::random_shuffle(numbers.begin(), numbers.end());
 
-  for(auto k: numbers)
-    std::cout << k << "   ";
+// initialize trees
+	bst<int,char> mybst;				// bst
+	bst<int,char> mybalbst;			// balanced bst
+  std::map<int,char> mymap;		// std::map
 
-// progressively add numbers in the bst to increase the number of nodes contained in the bst
-  for(int i{0}; i<B; ++i) {		
-						// loop on blocks
-    std::cout << "i=" << i << "\n";
-    // insert all elements of block i
-    std::cout << "START INSERTING\n";
-    for(int j{i*D}; j<(i+1)*D; ++j) {
-      std::cout << "inserting " << numbers[j] << "\n";
-      mymap.insert({numbers[j], 'a'});
-    }
-    // measure how long it takes to find a key on average in a tree with i*D nodes
-    auto t0 = std::chrono::high_resolution_clock::now();
-    for(int j{0}; j<(i+1)*D; ++j) {
-      std::cout << "finding " << numbers[j] << "\n";
-      mymap.find(numbers[j]);
-    }
-    auto t1 = std::chrono::high_resolution_clock::now();
-		auto elapsed_prova = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0);
-  	outFile << (i+1)*D << "\t" << elapsed_prova.count()/double((i+1)*D) << "\n"; //[milliseconds]			// divide by the number of nodes we currently have in the bst
+// start benchmark
+  int P{0};
+  for(int N{100}; N<N_max; N+=10) {
+  	//insert nodes in the trees
+  	for(int i{P}; i<N; ++i) {
+	  	mymap.insert({numbers[i],'a'});
+      mybst.insert({numbers[i],'a'});
+      mybalbst.insert({numbers[i],'a'});
+	  }
+    P=N;			// don't insert the already inserted nodes
+    
+    //measuring time to find keys with std::map
+  	auto t0_map = std::chrono::high_resolution_clock::now();
+   	for(int k{0}; k<N; ++k){
+ 		  mymap.find(numbers[k]);
+  	}
+	  auto t1_map = std::chrono::high_resolution_clock::now();
+	  auto elapsed_map = std::chrono::duration_cast<std::chrono::microseconds>(t1_map-t0_map);
+
+
+    //measuring time to find keys with bst
+  	auto t0_bst = std::chrono::high_resolution_clock::now();
+   	for(int k{0}; k<N; ++k){
+ 		  mybst.find(numbers[k]);
+  	}
+	  auto t1_bst = std::chrono::high_resolution_clock::now();
+	  auto elapsed_bst = std::chrono::duration_cast<std::chrono::microseconds>(t1_bst-t0_bst);
+
+    // balance the tree
+    mybalbst.balance();
+    //measuring time to find keys with balanced bst
+  	auto t0_bst_bal = std::chrono::high_resolution_clock::now();
+   	for(int k{0}; k<N; ++k){
+ 		  mybalbst.find(numbers[k]);
+  	}
+	  auto t1_bst_bal = std::chrono::high_resolution_clock::now();
+	  auto elapsed_bst_bal = std::chrono::duration_cast<std::chrono::microseconds>(t1_bst_bal-t0_bst_bal);
+
+    // write results to file
+    outFile << N << "\t" << (double(elapsed_map.count()))/((double)N) << "\t" << (double(elapsed_bst.count()))/((double)N) << "\t" << (double(elapsed_bst_bal.count()))/((double)N) << "\n";
   }
-
-
-
-/*
-    auto t0_map = std::chrono::high_resolution_clock::now();
-    for(int j{0}; j<i; ++j) {
-      mybst.find(numbers[j]);
-    }
-    auto t1_map = std::chrono::high_resolution_clock::now();
-		auto elapsed_prova_map = std::chrono::duration_cast<std::chrono::milliseconds>(t1_map-t0_map);
-  	outFile << "\t" << elapsed_prova_map.count()/double(i) << "\n"; //[milliseconds]
-
-  }
-/*
-  auto t0 = std::chrono::high_resolution_clock::now();
-  for(long int i{}; i<N; ++i) {
-    mybst.insert({numbers[i], 'a'});
-  }
-  auto t1 = std::chrono::high_resolution_clock::now();
-  auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(t1-t0);
-  std::cout << "Elapsed " << elapsed.count() << " [milliseconds]" << std::endl;
-
-  auto t0_map = std::chrono::high_resolution_clock::now();
-  for(long int  i{}; i<N; ++i) {
-    mymap.insert({numbers[i], 'a'});
-  }
-  auto t1_map = std::chrono::high_resolution_clock::now();
-  auto elapsed_map = std::chrono::duration_cast<std::chrono::milliseconds>(t1_map-t0_map);
-  std::cout << "Elapsed " << elapsed_map.count() << " [milliseconds]" << std::endl;
-
 	outFile.close();
-*/
-  return 0;
+	return 0;
 }
