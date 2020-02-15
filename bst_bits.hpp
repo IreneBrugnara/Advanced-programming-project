@@ -49,11 +49,6 @@ std::pair<typename bst<kT,vT,cmp>::node_type*, where> bst<kT,vT,cmp>::locator(co
 }
 
 
-/* std::cout << "start of tree \n";
-        print_tree(root.get());
-        std::cout << "\nend of tree \n";
-*/
-
 
 // INSERT FUNCTIONS 
 
@@ -253,7 +248,6 @@ template <typename kT, typename vT, typename cmp>
 void bst<kT, vT, cmp>::balance() {
   std::vector<std::pair<const kT, vT>> myarr;
   for(auto it=begin(); it!=end(); ++it){
-    std::cout<<"--------\n";    
     myarr.push_back(std::move(*it));
   }
   clear();
