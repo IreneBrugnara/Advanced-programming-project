@@ -136,6 +136,6 @@ The copy constructor of ```bst ``` calls recursively a custom constructor of  ``
 
 We compare our binary search tree with ```std::map```provided by the Standard Template Library using ```int ``` type for keys. We measure the time taken by ```find ``` method in a tree with N nodes. We increase N by progressively  inserting nodes in the tree and for each N we average the time to find one element for all the possible positions in the tree (green curve). Since ```std::map ``` is automatically balanced, for a fair comparison we also consider to call ```balance ``` function before using ```find  ``` (blue curve).
 
-![](/home/roberto/Scrivania/Università/DSSC/Primo_Anno/Advanced_Programming/Advanced-programming-project/plot_benchmark_DEFINITIVO.png)
+![](/home/roberto/Scrivania/Università/DSSC/Primo_Anno/Advanced_Programming/Advanced-programming-project/plot_benchmark_final.png)
 
 We observe that time goes as O(log<sub>2</sub> N) as we expect. Our implementation of ```find ``` is slower than the ```std::map``` (red curve), however in case of a balanced  ```bst``` we see that performance improves. 
