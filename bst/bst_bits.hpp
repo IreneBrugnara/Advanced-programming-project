@@ -66,7 +66,7 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const 
   switch (info.second) {
     case where::empty: {
       root = std::make_unique<node_type>(new_pair, nullptr);
-      return std::pair<iterator, bool>{iterator{info.first}, true};
+      return std::pair<iterator, bool>{iterator{root.get()}, true};
     }
     case where::equal: {
       return std::pair<iterator, bool>{iterator{info.first}, false};
@@ -93,7 +93,7 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(std::p
   switch (info.second) {
     case where::empty: {
       root = std::make_unique<node_type>(std::move(new_pair), nullptr);
-      return std::pair<iterator, bool>{iterator{info.first}, true};
+      return std::pair<iterator, bool>{iterator{root.get()}, true};
     }
     case where::equal: {
       return std::pair<iterator, bool>{iterator{info.first}, false};
