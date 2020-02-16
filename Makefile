@@ -5,8 +5,10 @@ TEST_EXE = test
 BNCH_SRC = benchmark.cpp
 BNCH_EXE = benchmark
 INCLUDE = bst
+IMAGE = plot_benchmark.png
+PLOT = graph_benchmark.gp
 
-all: $(TEST_EXE) $(BNCH_EXE)
+all: $(TEST_EXE) $(BNCH_EXE) $(IMAGE)
 
 $(TEST_EXE): $(TEST_SRC)
 	$(CXX) $^ -o $@ -I $(INCLUDE) $(FLAGS)
@@ -14,10 +16,10 @@ $(TEST_EXE): $(TEST_SRC)
 $(BNCH_EXE): $(BNCH_SRC)
 	$(CXX) $^ -o $@ -I $(INCLUDE) $(FLAGS)
 
-plot_benchmark.png: graph_benchmark.gp
+$(IMAGE): $(PLOT)
 	gnuplot $^
 
 clean:
-	rm -fr $(TEST_EXE) $(BNCH_EXE)
+	rm -fr $(TEST_EXE) $(BNCH_EXE) $(IMAGE)
 
 .PHONY: clean all
