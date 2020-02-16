@@ -1,8 +1,8 @@
-## Binary Search Tree
+# Binary Search Tree
 
 Authors: Irene Brugnara, Roberto Corti.
 
-### Structure of the classes
+## Structure of the classes
 
 The aim of this project is to create a templated binary search tree. 
 There are three classes: 
@@ -15,7 +15,7 @@ There are three classes:
 
 The two support classes ``` Node ``` and  ```_iterator ``` are outside  ``` bst``` because they have different templates.  Class ```bst``` uses as template T of the nodes an ```std::pair<const kT, vT>``` . The key type is a constant because once a node is set the key cannot be changed. 
 
-### Methods
+## Methods
 
 In class ```iterator  ``` we implemented the overload of the operators  dereference  ```* ``` , arrow  ```-> ``` , comparison  ```==  ``` , pre and post increment  ```++ ``` .  
 The increment allows to jump from one node to the successive one in the ordered sequence of the keys. The keys are in ascending order because we implemented only a forward iterator.  
@@ -130,4 +130,12 @@ bst (bst&& b) noexcept = default; //move ctor
 bst& operator=(bst&& b) noexcept = default; //move assignment
 ```
 
-The copy constructor of ```bst ``` calls recursively a custom constructor of  ```Node ```  that does a deep copy of the nodes of ```b``` . The same custom constructor is called by the copy assignment of  ```bst ```. For what concerns move semantics, we used the compiler-generated constructor and assignment.  
+The copy constructor of ```bst ``` calls recursively a custom constructor of  ```Node ```  that does a deep copy of the nodes of ```b``` . The same custom constructor is called by the copy assignment of  ```bst ```. For what concerns move semantics, we used the compiler-generated constructor and assignment. 
+
+## Benchmark
+
+We compare our binary search tree with ```std::map```provided by the Standard Template Library using ```int ``` type for keys. We measure the time taken by ```find ``` method in a tree with N nodes. We increase N by progressively  inserting nodes in the tree and for each N we average the time to find one element for all the possible positions in the tree (green curve). Since ```std::map ``` is automatically balanced, for a fair comparison we also consider to call ```balance ``` function before using ```find  ``` (blue curve).
+
+![](/home/roberto/Scrivania/Università/DSSC/Primo_Anno/Advanced_Programming/Advanced-programming-project/plot_benchmark_DEFINITIVO.png)
+
+We observe that time goes as O(log<sub>2</sub> N) as we expect. Our implementation of ```find ``` is slower than the ```std::map``` (red curve), however in case of a balanced  ```bst``` we see that performance improves. 
