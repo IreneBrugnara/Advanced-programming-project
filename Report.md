@@ -7,17 +7,17 @@ Authors: Irene Brugnara, Roberto Corti.
 The aim of this project is to create a templated binary search tree. 
 There are three classes: 
 
-* ``` bst< const kT , vT , cmp = std::less<kT> >``` , that represents the binary search tree templated on a key type ```const kT``` and a value type ```vT``` . This class has as members a functional object of type ```cmp``` to compare two keys and a unique pointer ```root``` which points at the root of the tree. 
+* ``` bst< const kT, vT, cmp = std::less<kT> >``` , that represents the binary search tree templated on a key type ```const kT``` and a value type ```vT``` . This class has as members a functional object of type ```cmp``` to compare two keys and a unique pointer ```root``` which points at the root of the tree. 
 
-* ``` Node<T> ``` which stores as members a value of type ```T```, two unique pointers  ```right``` and ```left``` that point to the children of the node and a raw pointer to the parent node .
+* ``` Node<T>``` which stores as members a value of type ```T```, two unique pointers  ```right``` and ```left``` that point to the children of the node and a raw pointer to the parent node .
 
-* ```_iterator<node_t, O>  ```  that has a raw pointer to the current node of type ```node_t```. The other template ```O``` is used to differentiate iterators and const iterators.  
+* ```_iterator<node_t, O>```  that has a raw pointer to the current node of type ```node_t```. The other template ```O``` is used to differentiate iterators and const iterators.  
 
-The two support classes ``` Node ``` and  ```_iterator ``` are outside  ``` bst``` because they have different templates.  Class ```bst``` uses as template T of the nodes an ```std::pair<const kT, vT>``` . The key type is a constant because once a node is set the key cannot be changed. 
+The two support classes ```Node``` and  ```_iterator``` are outside  ``` bst``` because they have different templates.  Class ```bst``` uses as template T of the nodes an ```std::pair<const kT, vT>``` . The key type is a constant because once a node is set the key cannot be changed. 
 
 ## Methods
 
-In class ```iterator  ``` we implemented the overload of the operators  dereference  ```* ``` , arrow  ```-> ``` , comparison  ```==  ``` , pre and post increment  ```++ ``` .  
+In class ```iterator``` we implemented the overload of the operators  dereference  ```*``` , arrow  ```->``` , comparison  ```==``` , pre and post increment  ```++``` .  
 The increment allows to jump from one node to the successive one in the ordered sequence of the keys. The keys are in ascending order because we implemented only a forward iterator.  
 In order to find this successive element we provide the following algorithm: if the current node has a right child, the successive element is the leftmost node in the right subtree; otherwise, the successive node is the current node's first right ancestor.
 
@@ -29,7 +29,7 @@ Class ``bst``  has the following methods.
 std::pair<node_type*, where> locator(const kT& key)
 ```
 
-This private method is used by the functions insert, find and by operator[] . Since these functions have similar tasks, that is finding/inserting the ```key ``` in the tree, the idea is that they call a common function Locator that performs their common instructions. We introduce an enum class `` where  ``with four possible values: ```right, left, equal, empty ```.  Given the key as argument, the function looks for the ``key`` in the tree. If ``key `` is found, the returned pair contains a pointer to the node with this key and an enum with value ```equal ``` ; if it is not found, the return pair has a pointer to the node to which the ```key``` can be appended and an enum that is ```right``` or ```left``` depending on where the ```key``` has to be appended. In case of an empty tree it returns a pointer to the root and an enum with ```empty``` value. 
+This private method is used by the functions insert, find and by operator[] . Since these functions have similar tasks, that is finding/inserting the ```key``` in the tree, the idea is that they call a common function Locator that performs their common instructions. We introduce an enum class `` where`` with four possible values: ```right, left, equal, empty```.  Given the key as argument, the function looks for the ``key`` in the tree. If ``key`` is found, the returned pair contains a pointer to the node with this key and an enum with value ```equal``` ; if it is not found, the return pair has a pointer to the node to which the ```key``` can be appended and an enum that is ```right``` or ```left``` depending on where the ```key``` has to be appended. In case of an empty tree it returns a pointer to the root and an enum with ```empty``` value. 
 
 #### Insert
 
@@ -39,7 +39,7 @@ std::pair<iterator, bool> insert(std::pair<const kT, vT> && new_pair);
 ```
 
 The idea is to separate the localization of the place where to put the new node from the actual allocation of memory for the new node: the first task is perfomed by Locator and the second by Insert. 
-This function inserts a ```new_pair``` in the binary search tree. At first, it calls Locator and if the enum ```where```  is not ```equal``` it performs an insertion on the right place allocating a new node with ```std::make_unique ```, returning an iterator to this node and a bool ``true``.   Instead, if the ``key`` is already present inside the tree, the function returns an iterator to the related node and ``false``.
+This function inserts a ```new_pair``` in the binary search tree. At first, it calls Locator and if the enum ```where```  is not ```equal``` it performs an insertion on the right place allocating a new node with ```std::make_unique```, returning an iterator to this node and a bool ``true``.   Instead, if the ``key`` is already present inside the tree, the function returns an iterator to the related node and ``false``.
 
 #### Find 
 
@@ -48,11 +48,11 @@ iterator find(const kT& key);
 const_iterator find(const kT& key) const;
  ```
 
-This method calls Locator to look for a node with ```key ``` and returns an iterator to this node or ```end() ```  if the ```key``` is not found. 
+This method calls Locator to look for a node with ```key``` and returns an iterator to this node or ```end()```  if the ```key``` is not found. 
 
 #### Emplace 
 
-``` c++
+```c++
 template< class... Types >
 std::pair<iterator,bool> emplace(Types&&... args);
 ```
@@ -86,7 +86,7 @@ const_iterator end() const;
 const_iterator cend() const;
 ```
 
-End function returns an iterator to  ``nullptr ``.
+End function returns an iterator to  ``nullptr``.
 
 #### Clear
 
@@ -110,7 +110,7 @@ This method overloads the operator ``<<`` for the bst class iterating the nodes 
 void erase(const kT& x);
 ```
 
-Erase removes the node with key ```x ``` from the tree. Once this node is found with Locator function, we attach the right subtree of this node to its parent. Then, the left subtree of the erased node is attached to the leftmost node of the right subtree. This solution may lead to an unbalanced tree, but the advantage is that it requires few operations. 
+Erase removes the node with key ```x``` from the tree. Once this node is found with Locator function, we attach the right subtree of this node to its parent. Then, the left subtree of the erased node is attached to the leftmost node of the right subtree. This solution may lead to an unbalanced tree, but the advantage is that it requires few operations. 
 
 #### Balance
 
@@ -130,12 +130,13 @@ bst (bst&& b) noexcept = default; //move ctor
 bst& operator=(bst&& b) noexcept = default; //move assignment
 ```
 
-The copy constructor of ```bst ``` calls recursively a custom constructor of  ```Node ```  that does a deep copy of the nodes of ```b``` . The same custom constructor is called by the copy assignment of  ```bst ```. For what concerns move semantics, we used the compiler-generated constructor and assignment. 
+The copy constructor of ```bst``` calls recursively a custom constructor of  ```Node```  that does a deep copy of the nodes of ```b``` . The same custom constructor is called by the copy assignment of  ```bst```. For what concerns move semantics, we used the compiler-generated constructor and assignment. 
 
 ## Benchmark
 
-We compare our binary search tree with ```std::map```provided by the Standard Template Library using ```int ``` type for keys. We measure the time taken by ```find ``` method in a tree with N nodes. We increase N by progressively  inserting nodes in the tree and for each N we average the time to find one element for all the possible positions in the tree (green curve). Since ```std::map ``` is automatically balanced, for a fair comparison we also consider to call ```balance ``` function before using ```find  ``` (blue curve).
+We compare our binary search tree with ```std::map```provided by the Standard Template Library using ```int``` type for keys. We measure the time taken by ```find``` method in a tree with N nodes. We increase N by progressively  inserting nodes in the tree and for each N we average the time to find one element for all the possible positions in the tree (green curve). Since ```std::map``` is automatically balanced, for a fair comparison we also consider to call ```balance``` function before using ```find``` (blue curve).
 
-![](/home/roberto/Scrivania/Università/DSSC/Primo_Anno/Advanced_Programming/Advanced-programming-project/plot_benchmark_final.png)
+![](plot_benchmark_final.png)
 
-We observe that time goes as O(log<sub>2</sub> N) as we expect. Our implementation of ```find ``` is slower than the ```std::map``` (red curve), however in case of a balanced  ```bst``` we see that performance improves. 
+We observe that time goes as O(log<sub>2</sub> N) as we expect. Our implementation of ```find``` is slower than the ```std::map``` (red curve), however in case of a balanced  ```bst``` we see that performance improves. 
+
