@@ -2,7 +2,6 @@
 #define __bst__
 
 
-
 #include <iostream>
 #include <memory>   		// std::unique_ptr
 #include <utility>  		// std::pair
@@ -23,7 +22,7 @@ template <typename kT, typename vT, typename cmp=std::less<kT>>
 class bst {
 public:
   using node_type = Node<std::pair<const kT, vT>>;
-  bst(cmp x): op{x} {}      											// custom constructor
+  explicit bst(cmp x): op{x} {}      											// custom constructor
   bst() noexcept = default;      									// default constructor
   bst(const bst & b) {            								// copy constructor
     root = std::make_unique<node_type>(b.root, nullptr);
@@ -42,6 +41,7 @@ public:
   std::pair<iterator, bool> insert(const std::pair<const kT, vT> &);
   std::pair<iterator, bool> insert(std::pair<const kT, vT> &&);
   iterator find(const kT& x); 
+  const_iterator find(const kT& x) const; 
   vT& operator[] (const kT& x);
   vT& operator[] (kT&& x);
 
@@ -60,18 +60,18 @@ public:
   void erase(const kT& x);
   void balance();
 
-friend std::ostream& operator<<(std::ostream& os, const bst< kT,vT>& mybst){
-  for(auto it=mybst.begin(); it!=mybst.end(); it++)
-    os << "( " << it->first << ", " << it->second << ")  ";
-  return os;
- }
+  friend std::ostream& operator<<(std::ostream& os, const bst< kT,vT>& mybst) {
+    for(auto it=mybst.cbegin(); it!=mybst.cend(); ++it)
+      os << "( " << it->first << ", " << it->second << ")  ";
+    return os;
+  }
 
   
 private:
   cmp op;
   std::unique_ptr<node_type> root;
 
-  std::pair<node_type*, where> locator(const kT& key);
+  std::pair<node_type*, where> locator(const kT& key) const;
   // if the key is already present in a node, locator returns an iterator to this node and where=equal; if the key is not present and should go on the right child of a node, locator returns this node and where=right; similarly for left
 
   void print_tree(node_type*) const;   // just for us to debug and check tree structure

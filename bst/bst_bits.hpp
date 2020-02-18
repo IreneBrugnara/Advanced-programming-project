@@ -10,7 +10,7 @@
 
 // this is a support function used in insert(), find(), operator[]
 template <typename kT, typename vT, typename cmp>
-std::pair<typename bst<kT,vT,cmp>::node_type*, where> bst<kT,vT,cmp>::locator(const kT& key) {
+std::pair<typename bst<kT,vT,cmp>::node_type*, where> bst<kT,vT,cmp>::locator(const kT& key) const {
 
   // here node_type is known
   node_type* jumper {root.get()};
@@ -111,17 +111,28 @@ std::pair<typename bst<kT,vT,cmp>::iterator,bool> bst<kT,vT,cmp>::emplace(Types&
 
 
 
-//FIND FUNCTION
+//FIND FUNCTIONS
 
 template <typename kT, typename vT, typename cmp>
 typename bst<kT,vT,cmp>::iterator bst<kT,vT,cmp>::find(const kT& x){
-
   auto info = locator(x);
 
   if(info.second == where::equal)
     return iterator{info.first};
   else{
     return end();
+  }
+
+}
+
+template <typename kT, typename vT, typename cmp>
+typename bst<kT,vT,cmp>::const_iterator bst<kT,vT,cmp>::find(const kT& x) const {
+  auto info = locator(x);
+
+  if(info.second == where::equal)
+    return const_iterator{info.first};
+  else{
+    return cend();
   }
 
 }
@@ -203,11 +214,11 @@ void bst<kT,vT,cmp>::erase(const kT& x) {
     if(eraseme->right) {
     // attach right subtree of eraseme to the parent of eraseme
       eraseme->right->parent = eraseme->parent;
-      (eraseme->parent)->right = std::move(eraseme->right);  // this also deletes eraseme (through reset)
+      (eraseme->parent)->right = std::move(eraseme->right);  // this also deletes eraseme
     }
     else if (eraseme->left) { 			// eraseme has only a left child
       eraseme->left->parent = eraseme->parent;
-      (eraseme->parent)->right = std::move(eraseme->left);   // this also deletes eraseme (through reset)
+      (eraseme->parent)->right = std::move(eraseme->left);   // this also deletes eraseme
     }  
     else {					// eraseme has no children
       (eraseme->parent->right).reset();
@@ -218,11 +229,11 @@ void bst<kT,vT,cmp>::erase(const kT& x) {
     if (eraseme->right){
 		// attach right subtree of eraseme to the parent of eraseme
       eraseme->right->parent = eraseme->parent;
-      (eraseme->parent)->left = std::move(eraseme->right);  // this also deletes eraseme (through reset)
+      (eraseme->parent)->left = std::move(eraseme->right);  // this also deletes eraseme
     }
     else if (eraseme->left) { 			// eraseme has only a left child
       eraseme->left->parent = eraseme->parent;
-      (eraseme->parent)->left = std::move(eraseme->left);   // this also deletes eraseme (through reset)
+      (eraseme->parent)->left = std::move(eraseme->left);   // this also deletes eraseme
     }  
     else {					// eraseme has no children
       (eraseme->parent->left).reset();
@@ -253,6 +264,8 @@ template <typename kT, typename vT, typename cmp>
 _iterator<Node<std::pair<const kT, vT>>, typename Node<std::pair<const kT, vT>>::value_type> bst<kT,vT,cmp>::begin() noexcept
 {
   node_type* jumper{root.get()};
+  if(!jumper)
+    return iterator{jumper};
   while(jumper->left)									// go as far left as I can
     jumper = (jumper->left).get();
   return iterator{jumper};
@@ -260,6 +273,12 @@ _iterator<Node<std::pair<const kT, vT>>, typename Node<std::pair<const kT, vT>>:
 
 template <typename kT, typename vT, typename cmp>
 _iterator<Node<std::pair<const kT, vT>>, const typename Node<std::pair<const kT, vT>>::value_type> bst<kT,vT,cmp>::begin() const noexcept
+{
+  return cbegin();
+}
+
+template <typename kT, typename vT, typename cmp>
+_iterator<Node<std::pair<const kT, vT>>, const typename Node<std::pair<const kT, vT>>::value_type> bst<kT,vT,cmp>::cbegin() const noexcept
 {
   node_type* jumper{root.get()};
   if(!jumper)

@@ -19,7 +19,11 @@ int main() {
 
 // test begin()
   auto mybegin = mybst.begin();
-  std::cout << "first key: " << mybegin->first << "first value: " << mybegin->second << "\n";
+  std::cout << "first key: " << mybegin->first << " first value: " << mybegin->second << "\n";
+
+  auto cit = mybst.cbegin();
+  ++cit;
+  std::cout << "second key: " << cit->first << " first value: " << cit->second << "\n";
 
 // test put-to operator
   std::cout << "Print tree:\n" << mybst << std::endl;
@@ -33,6 +37,8 @@ int main() {
   r = mybst.find(47);
   if(r==mybst.end())
     std::cout << "value not found" << std::endl;
+
+
 
 // test subscript operator
   auto value = mybst[7];
