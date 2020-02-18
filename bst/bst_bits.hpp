@@ -2,9 +2,8 @@
 #define __bst_bits__
 
 #include <iostream>
-#include <memory>   // smart pointer
-#include <utility>  // std::pair
-#include <functional>
+#include <memory>   		// smart pointer
+#include <utility>  		// std::pair
 #include <vector>
 
 
@@ -18,11 +17,11 @@ std::pair<typename bst<kT,vT,cmp>::node_type*, where> bst<kT,vT,cmp>::locator(co
   
   if(!jumper) {     // if the tree is empty, create root node
     return std::pair<node_type*, where>{root.get(), where::empty};
-   }
+  }
 
   while(true)
   {
-    if( op( (jumper->value).first , key ) )
+    if( op( (jumper->value).first , key ) )			// if current key is less than input key
     {
       if(jumper->right)       // if right child is different from nullptr
         jumper = (jumper->right).get();    // go right
@@ -32,9 +31,8 @@ std::pair<typename bst<kT,vT,cmp>::node_type*, where> bst<kT,vT,cmp>::locator(co
     }
     else if ( op( key , (jumper->value).first ) )
     {
-      // go left
       if(jumper->left)       // if right left is different from nullptr
-        jumper = (jumper->left).get();
+        jumper = (jumper->left).get();      // go left
       else {
         return std::pair<node_type*, where>{jumper, where::left};
       }
@@ -45,7 +43,6 @@ std::pair<typename bst<kT,vT,cmp>::node_type*, where> bst<kT,vT,cmp>::locator(co
     }
   }
 
-
 }
 
 
@@ -54,9 +51,8 @@ std::pair<typename bst<kT,vT,cmp>::node_type*, where> bst<kT,vT,cmp>::locator(co
 
 template <typename kT, typename vT, typename cmp>
 std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const std::pair<const kT, vT> & new_pair) {
-  // here node_type is known
   auto info = locator(new_pair.first);    // get information of what to do from function locator
-// info is std::pair of (node*, where)
+  // info is std::pair of (node*, where)
 
   switch (info.second) {
     case where::empty: {
@@ -81,9 +77,8 @@ std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(const 
 
 template <typename kT, typename vT, typename cmp>
 std::pair<typename bst<kT,vT,cmp>::iterator, bool> bst<kT,vT,cmp>::insert(std::pair<const kT, vT> && new_pair) {
-  // here node_type is known
   auto info = locator(new_pair.first);    // get information of what to do from function locator
-// info is std::pair of (node*, where)
+  // info is std::pair of (node*, where)
 
   switch (info.second) {
     case where::empty: {
@@ -112,7 +107,6 @@ template <typename kT, typename vT, typename cmp>
 template< class... Types>
 std::pair<typename bst<kT,vT,cmp>::iterator,bool> bst<kT,vT,cmp>::emplace(Types&&... args) {
   return insert(std::pair<const kT,vT>{std::forward<Types>(args)...});
-
 }
 
 
@@ -136,14 +130,13 @@ typename bst<kT,vT,cmp>::iterator bst<kT,vT,cmp>::find(const kT& x){
 
 template <typename kT, typename vT, typename cmp>
 void bst<kT,vT,cmp>::print_tree(node_type* jumper) const {
-                      //node_type* jumper{root.get()};
 
   std::cout << jumper->value.first;
   // call function recursively on left child
   if(jumper->left) {
-  std::cout << " ( ";
-  print_tree((jumper->left).get());
-  std::cout << ", ";
+    std::cout << " ( ";
+    print_tree((jumper->left).get());
+    std::cout << ", ";
   }
   else
   {
@@ -151,8 +144,8 @@ void bst<kT,vT,cmp>::print_tree(node_type* jumper) const {
   }
   // call function recursively on right child
   if(jumper->right) {
-  print_tree((jumper->right).get());
-  std::cout << " ) ";
+    print_tree((jumper->right).get());
+    std::cout << " ) ";
   }
   else
   {
@@ -160,6 +153,7 @@ void bst<kT,vT,cmp>::print_tree(node_type* jumper) const {
   }
   return;
 };
+
 
 //SUBSCRIPT OPERATORS
 
@@ -169,9 +163,6 @@ vT& bst<kT,vT,cmp>::operator[] (const kT& x){
   auto info = insert(input);
   return (info.first)->second;
 
-
-  //TODO try to use not insert function but locator (why? here we initialize a std::pair)
-  
 }
 
 template <typename kT, typename vT, typename cmp>
@@ -182,6 +173,8 @@ vT& bst<kT,vT,cmp>::operator[] (kT&& x){
   
 }
 
+// ERASE FUNCTION
+
 template <typename kT, typename vT, typename cmp>
 void bst<kT,vT,cmp>::erase(const kT& x) {
   // find node to be erased and get an iterator pointing to it
@@ -190,7 +183,7 @@ void bst<kT,vT,cmp>::erase(const kT& x) {
   if(mypair.second!=where::equal)
     return;
 
-  // A=B  attach left subtree of eraseme to the leftmost node of the right subtree of eraseme
+  // attach left subtree of eraseme to the leftmost node of the right subtree of eraseme
   if (eraseme->right && eraseme->left) {
     auto it = iterator{eraseme};
     ++it;
@@ -198,43 +191,40 @@ void bst<kT,vT,cmp>::erase(const kT& x) {
     it.current->left->parent = it.current;
   }
 
-// SE ERASEME È LA ROOT
+  // if eraseme is the root
   if(!eraseme->parent) {
     eraseme->right->parent = nullptr;
     root = std::move(eraseme->right);
-   
     return;
   }
 
-// SE ERASEME È UN FIGLIO DESTRO
+// if eraseme is a right child
   if(eraseme->parent->right.get()==eraseme) {
     if(eraseme->right) {
-// P=Q  attach right subtree of eraseme to the parent of eraseme
+    // attach right subtree of eraseme to the parent of eraseme
       eraseme->right->parent = eraseme->parent;
       (eraseme->parent)->right = std::move(eraseme->right);  // this also deletes eraseme (through reset)
     }
-    else if (eraseme->left) { 
+    else if (eraseme->left) { 			// eraseme has only a left child
       eraseme->left->parent = eraseme->parent;
-      (eraseme->parent)->right = std::move(eraseme->left);  // this also deletes eraseme (through reset)
+      (eraseme->parent)->right = std::move(eraseme->left);   // this also deletes eraseme (through reset)
     }  
-    else {
+    else {					// eraseme has no children
       (eraseme->parent->right).reset();
     }
   }
-
+// if eraseme is instead a left child
   else {
-// SE ERASEME È UN FIGLIO SINISTRO
-// A=B  attach left subtree of eraseme to the leftmost node of the right subtree of eraseme
     if (eraseme->right){
-// P=Q  attach right subtree of eraseme to the parent of eraseme
+		// attach right subtree of eraseme to the parent of eraseme
       eraseme->right->parent = eraseme->parent;
       (eraseme->parent)->left = std::move(eraseme->right);  // this also deletes eraseme (through reset)
     }
-    else if (eraseme->left) { 
+    else if (eraseme->left) { 			// eraseme has only a left child
       eraseme->left->parent = eraseme->parent;
-      (eraseme->parent)->left = std::move(eraseme->left);  // this also deletes eraseme (through reset)
+      (eraseme->parent)->left = std::move(eraseme->left);   // this also deletes eraseme (through reset)
     }  
-    else {
+    else {					// eraseme has no children
       (eraseme->parent->left).reset();
     }
 
@@ -244,14 +234,15 @@ void bst<kT,vT,cmp>::erase(const kT& x) {
 
 
 // BALANCE FUNCTION
+
 template <typename kT, typename vT, typename cmp>
 void bst<kT, vT, cmp>::balance() {
   std::vector<std::pair<const kT, vT>> myarr;
   for(auto it=begin(); it!=end(); ++it){
-    myarr.push_back(std::move(*it));
+    myarr.push_back(std::move(*it));				// move elements from bst to vector
   }
   clear();
-  root = std::make_unique<node_type>(myarr, 0, myarr.size()-1, nullptr);
+  root = std::make_unique<node_type>(myarr, 0, myarr.size()-1, nullptr);		// start reconstructing bst
 
 }
 
@@ -262,7 +253,7 @@ template <typename kT, typename vT, typename cmp>
 _iterator<Node<std::pair<const kT, vT>>, typename Node<std::pair<const kT, vT>>::value_type> bst<kT,vT,cmp>::begin() noexcept
 {
   node_type* jumper{root.get()};
-  while(jumper->left)
+  while(jumper->left)									// go as far left as I can
     jumper = (jumper->left).get();
   return iterator{jumper};
 }

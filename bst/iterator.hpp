@@ -3,10 +3,6 @@
 
 
 #include <iostream>
-//#include <memory>   // smart pointer
-//#include <utility>  // std::pair
-//#include <functional>
-//#include <vector>
 
 
 template <typename kT, typename vT, typename cmp>
@@ -17,11 +13,12 @@ class _iterator {
   node_t* current;
 
 public: 
-  using value_type = O;// typename node_t::value_type;
+  using value_type = O;
   using reference = value_type&;
   using pointer = value_type*;
   using iterator_category = std::forward_iterator_tag;
   using difference_type = std::ptrdiff_t;
+
   // overloading operators ++, *, ->...
   _iterator(node_t* new_node): current{new_node} {}        // custom constructor
   reference operator*() const noexcept { return current->value; }
@@ -32,7 +29,7 @@ public:
   friend bool operator!=(const _iterator& a, const _iterator& b) {
     return !(a == b);
   }
-  // check why friend????
+
   _iterator& operator++() noexcept;           // pre-increment
   _iterator operator++(int) noexcept {        // post-increment
     _iterator tmp{current};
@@ -41,7 +38,7 @@ public:
   }
 
 template <typename kT, typename vT, typename cmp>
-  friend void bst<kT,vT,cmp>::erase(const kT& x);  // così posso fare iterator.current
+  friend void bst<kT,vT,cmp>::erase(const kT& x);  // so that I can do iterator.current
 };
 
 template <typename node_t, typename O>
